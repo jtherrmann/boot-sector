@@ -19,55 +19,121 @@
 	;; without the above lines, printing chars with the BIOS interrupt (see
 	;; `print`) just outputs random chars, not the ones in our string
 
-	;; get char
-	;; from https://wiki.osdev.org/Real_mode_assembly_I#So_where.27s_the_code.3F
+;;; ===========================================================================
+;;; REPL
+;;; ===========================================================================
+
+repl:
+	call reset_input
+
+	mov di, repl_prompt
+	call print
+	
+	mov di, input		; start of input array
+	mov bx, 0		; index
+
+	.read_char:
+	
+	;; read a char to al
 	mov ah, 0
 	int 0x16
-	cmp al, 0x08
-	jne call_print
 
-print_back:
-	mov di, backstr
+	;; check for carriage ret (enter)
+	cmp al, 0x0d
+	je .eval_print
+
+	;; add the char to the input array
+	;; note: only certain regs can be used for indexing, di and bx both
+	;; work
+	mov [di+bx], al
+
+	;; print the char in al
+	mov ah, 0x0e
+	int 0x10
+	
+	inc bx
+	jmp .read_char
+
+	.eval_print:
+	
+	call print_newline
+
+	mov di, input
 	call print
-	jmp hang
-call_print:	
-	;; does work:
-	;; push str
-	;; pop di
 
-	mov di, str
-	call print
+	call print_newline
+	call print_newline
+	
+	jmp repl
 
-hang:
-	jmp hang
+;;; ---------------------------------------------------------------------------
+;;; REPL (end)
+;;; ---------------------------------------------------------------------------
+
 
 ;;; ===========================================================================
-;;; PRINT: start def
+;;; DATA
 ;;; ===========================================================================
-;;;
+
+	input times 32 db 0	; user input array
+	repl_prompt db "> ",0	; repl prompt
+
+
+;;; ===========================================================================
+;;; PROCEDURES
+;;; ===========================================================================
+
+reset_input:
+;;; Fill the input array with 0s.
+	mov di, input
+	mov bx, 0
+
+	jmp .test
+
+	.start:
+
+	mov BYTE [di+bx], 0
+	inc bx
+
+	.test:
+
+	cmp bx, 32
+	jl .start
+
+	ret
+
+print:
 ;;; Print a string.
 ;;; Pre: di contains a pointer to the beginning of the string.
-print:
 	mov ah, 0x0e
 
-	jmp print_test
-print_start:	
+	jmp .test
+
+	.start:
+
 	mov al, [di]
 	int 0x10
 	inc di
-print_test:
+
+	.test:
+
 	cmp BYTE [di], 0
-	jne print_start
+	jne .start
 	
 	ret
-;;; ===========================================================================
-;;; PRINT: end def
-;;; ===========================================================================
 
-str:
-	db "Hello, world!",0
-backstr:
-	db "backspace",0
+print_newline:
+;;; Move the cursor to the beginning of the next line.
+	mov ah, 0x0e
+	mov al, 0x0d	; carriage ret
+	int 0x10
+	mov al, 0x0a	; newline
+	int 0x10
+	ret
+
+;;; ---------------------------------------------------------------------------
+;;; PROCEDURES (end)
+;;; ---------------------------------------------------------------------------
 
 	times 512-2-($-$$) db 0
 	db 0x55
