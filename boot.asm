@@ -103,12 +103,12 @@ hello:
 
 reboot:
 ;;; Reboot.
-	jmp .print
+	jmp .start
 
 	.str1 db "See you soon!",0
 	.str2 db "Press any key to reboot.",0
 
-	.print:
+	.start:
 
 	mov di, .str1
 	call println
@@ -138,13 +138,13 @@ reset_input:
 
 	jmp .test
 
-	.start:
+	.loop:
 	mov BYTE [di+bx], 0
 	inc bx
 
 	.test:
 	cmp bx, 32
-	jl .start
+	jl .loop
 
 	ret
 
@@ -194,7 +194,7 @@ compare_strings:
 ;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
 	mov bx, 0
 
-	.start:
+	.loop:
 
 	mov BYTE al, [si+bx]
 	cmp BYTE [di+bx], al
@@ -204,7 +204,7 @@ compare_strings:
 	je .true
 
 	inc bx
-	jmp .start
+	jmp .loop
 
 	.true:
 	mov ax, 1
@@ -222,7 +222,7 @@ print:
 	mov bx, 0
 	jmp .test
 
-	.start:
+	.loop:
 
 	mov BYTE al, [di+bx]
 	int 0x10
@@ -231,7 +231,7 @@ print:
 	.test:
 
 	cmp BYTE [di+bx], 0
-	jne .start
+	jne .loop
 	
 	ret
 
