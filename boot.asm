@@ -37,6 +37,9 @@
 ;;; and promises to call the command matching that string (or a catch-all command for
 ;;; when the command string is invalid)
 
+	mov di, repl_prompt
+	mov BYTE [di], '>'
+	mov BYTE [di+1], ' '
 repl:
 	mov di, repl_prompt
 	call println
@@ -56,8 +59,8 @@ repl:
 ;;; DATA
 ;;; ===========================================================================
 
-	input times 32 db 0	; user input array
-	repl_prompt db "> ",0	; repl prompt
+	input times 32 db 0
+	repl_prompt times 32 db 0
 
 
 ;;; ===========================================================================
@@ -73,6 +76,43 @@ hello:
 	.print:
 	mov di, .str
 	call println
+	ret
+
+me:
+;;; Identify the user.
+	jmp .start
+
+	.str db "Who are you? ",0
+
+	.start:
+
+	mov di, repl_prompt
+	mov si, 32
+	call reset_array
+
+	mov di, .str
+	call println
+
+	mov di, input
+	mov si, 32
+	call getstr
+
+	mov si, repl_prompt
+	mov bx, 0
+	jmp .test
+
+	.loop:
+	mov al, [di+bx]
+	mov BYTE [si+bx], al
+	inc bx
+
+	.test:
+	cmp BYTE [di+bx], 0
+	jne .loop
+
+	mov BYTE [si+bx], '>'
+	mov BYTE [si+bx+1], ' '
+
 	ret
 
 reboot:
@@ -167,6 +207,7 @@ execute_command:
 	jmp .skipdata
 	
 	.hello_cmd db "hello",0
+	.me_cmd db "me",0
 	.reboot_cmd db "reboot",0
 
 	.skipdata:
@@ -178,6 +219,14 @@ execute_command:
 	call hello
 	ret
 	.skiphello:
+
+	mov si, .me_cmd
+	call compare_strings
+	cmp ax, 0
+	je .skipme
+	call me
+	ret
+	.skipme:
 
 	mov si, .reboot_cmd
 	call compare_strings
