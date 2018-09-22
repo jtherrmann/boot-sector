@@ -38,14 +38,13 @@
 ;;; when the command string is invalid)
 
 	mov di, repl_prompt
-	mov BYTE [di], '>'
+	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
 repl:
 	mov di, repl_prompt
 	call println
 
 	mov di, input
-	mov si, 32
 	call getstr
 	call execute_command
 	jmp repl
@@ -86,15 +85,10 @@ me:
 
 	.start:
 
-	mov di, repl_prompt
-	mov si, 32
-	call reset_array
-
 	mov di, .str
 	call println
 
 	mov di, input
-	mov si, 32
 	call getstr
 
 	mov si, repl_prompt
@@ -110,8 +104,10 @@ me:
 	cmp BYTE [di+bx], 0
 	jne .loop
 
-	mov BYTE [si+bx], '>'
+	;; TODO: should stop writing at length 29 to leave room for:
+	mov BYTE [si+bx+0], '>'
 	mov BYTE [si+bx+1], ' '
+	mov BYTE [si+bx+2], 0
 
 	ret
 
@@ -152,11 +148,8 @@ reboot:
 
 getstr:
 ;;; Read a string from keyboard input.
-;;; Pre: di points to an array and si contains the array's length.
-;;; Post: di points to the same array, which now contains the string followed
-;;; by 0s.
-	call reset_array
-
+;;; Pre: di points to an array.
+;;; Post: di points to the same array, which now contains the string.
 	mov bx, 0	; index
 	.loop:
 	
@@ -183,22 +176,7 @@ getstr:
 	jmp .loop
 
 	.return:
-	ret
-
-reset_array:
-;;; Fill an array with 0s.
-;;; Pre: di points to an array and si contains the array's length.
-	mov bx, 0
-	jmp .test
-
-	.loop:
 	mov BYTE [di+bx], 0
-	inc bx
-
-	.test:
-	cmp bx, si
-	jl .loop
-
 	ret
 
 execute_command:
