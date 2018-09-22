@@ -19,6 +19,22 @@
 	;; without the above lines, printing chars with the BIOS interrupt (see
 	;; `print`) just outputs random chars, not the ones in our string
 
+	;; get char
+	;; from https://wiki.osdev.org/Real_mode_assembly_I#So_where.27s_the_code.3F
+	mov ah, 0
+	int 0x16
+	cmp al, 0x08
+	jne call_print
+
+print_back:
+	mov di, backstr
+	call print
+	jmp hang
+call_print:	
+	;; does work:
+	;; push str
+	;; pop di
+
 	mov di, str
 	call print
 
@@ -50,6 +66,8 @@ print_test:
 
 str:
 	db "Hello, world!",0
+backstr:
+	db "backspace",0
 
 	times 512-2-($-$$) db 0
 	db 0x55
