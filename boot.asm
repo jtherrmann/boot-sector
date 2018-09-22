@@ -41,11 +41,10 @@ repl:
 	mov di, repl_prompt
 	call println
 
-	call getstr
-	
 	mov di, input
+	mov si, 32
+	call getstr
 	call execute_command
-	
 	jmp repl
 
 ;;; ---------------------------------------------------------------------------
@@ -113,11 +112,12 @@ reboot:
 
 getstr:
 ;;; Read a string from keyboard input.
-	call reset_input
+;;; Pre: di points to an array and si contains the array's length.
+;;; Post: di points to the same array, which now contains the string followed
+;;; by 0s.
+	call reset_array
 
-	mov di, input	; start of input array
 	mov bx, 0	; index
-
 	.loop:
 	
 	;; read a char to al
@@ -145,11 +145,10 @@ getstr:
 	.return:
 	ret
 
-reset_input:
-;;; Fill the input array with 0s.
-	mov di, input
+reset_array:
+;;; Fill an array with 0s.
+;;; Pre: di points to an array and si contains the array's length.
 	mov bx, 0
-
 	jmp .test
 
 	.loop:
@@ -157,7 +156,7 @@ reset_input:
 	inc bx
 
 	.test:
-	cmp bx, 32
+	cmp bx, si
 	jl .loop
 
 	ret
