@@ -219,17 +219,18 @@ print:
 ;;; Pre: di contains a pointer to the beginning of the string.
 	mov ah, 0x0e
 
+	mov bx, 0
 	jmp .test
 
 	.start:
 
-	mov BYTE al, [di]
+	mov BYTE al, [di+bx]
 	int 0x10
-	inc di
+	inc bx
 
 	.test:
 
-	cmp BYTE [di], 0
+	cmp BYTE [di+bx], 0
 	jne .start
 	
 	ret
