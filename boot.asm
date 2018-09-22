@@ -5,6 +5,8 @@
 ;;; https://opensourceforu.com/2017/06/hack-bootsector-write/
 ;;; test:
 ;;; qemu-system-x86_64 boot.bin
+
+;;; for reference: https://wiki.osdev.org/Real_mode_assembly_I#So_where.27s_the_code.3F
 	
 	bits 16
 
@@ -22,6 +24,16 @@
 ;;; ===========================================================================
 ;;; REPL
 ;;; ===========================================================================
+
+;;; NEXT: compare strings procedure (di points to one, si to the other)
+;;; use this to implement commands
+;;; can have a command lookup table; series of pointer pairs; for each pair, first
+;;; points to a pointer to a str, second points to a pointer to a procedure;
+;;; for each first pointer, check if its string is the command, and if it is then
+;;; call the second pointer's procedure, otherwise go to the next pointer pair
+;;; can have a procedure for doing this, that just takes a pointer to the command string
+;;; and promises to call the command matching that string (or a catch-all command for
+;;; when the command string is invalid)
 
 repl:
 	call reset_input
