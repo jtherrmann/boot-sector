@@ -66,6 +66,8 @@ repl:
 ;;; USER COMMANDS
 ;;; ===========================================================================
 
+;;; TODO: "help" command to list all commands
+
 hello:
 ;;; Print "Hello, world!"
 	jmp .print
