@@ -57,6 +57,7 @@ repl:
 	;; add the char to the input array
 	;; note: only certain regs can be used for indexing, di and bx both
 	;; work
+	;; also see: https://stackoverflow.com/a/12474190
 	mov BYTE [di+bx], al
 
 	;; print the char in al
