@@ -1,3 +1,5 @@
+;;; TODO: clean up, document; search for TODO in file
+	
 ;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
 ;;; compile:
 ;;; nasm -f bin -o boot.bin boot.asm
@@ -36,38 +38,10 @@
 ;;; when the command string is invalid)
 
 repl:
-	call reset_input
-
 	mov di, repl_prompt
 	call println
-	
-	mov di, input		; start of input array
-	mov bx, 0		; index
 
-	.read_char:
-	
-	;; read a char to al
-	mov ah, 0
-	int 0x16
-
-	;; check for carriage ret (enter)
-	cmp al, 0x0d
-	je .eval_print
-
-	;; add the char to the input array
-	;; note: only certain regs can be used for indexing, di and bx both
-	;; work
-	;; also see: https://stackoverflow.com/a/12474190
-	mov BYTE [di+bx], al
-
-	;; print the char in al
-	mov ah, 0x0e
-	int 0x10
-	
-	inc bx
-	jmp .read_char
-
-	.eval_print:
+	call getstr
 	
 	mov di, input
 	call execute_command
@@ -136,6 +110,40 @@ reboot:
 ;;; ===========================================================================
 ;;; INTERNAL PROCEDURES
 ;;; ===========================================================================
+
+getstr:
+;;; Read a string from keyboard input.
+	call reset_input
+
+	mov di, input	; start of input array
+	mov bx, 0	; index
+
+	.loop:
+	
+	;; read a char to al
+	mov ah, 0
+	int 0x16
+
+	;; check for carriage ret (enter)
+	cmp al, 0x0d
+	je .return
+
+	;; add the char to the input array
+	;; TODO: document:
+	;; note: only certain regs can be used for indexing, di and bx both
+	;; work
+	;; also see: https://stackoverflow.com/a/12474190
+	mov BYTE [di+bx], al
+
+	;; print the char in al
+	mov ah, 0x0e
+	int 0x10
+	
+	inc bx
+	jmp .loop
+
+	.return:
+	ret
 
 reset_input:
 ;;; Fill the input array with 0s.
