@@ -39,7 +39,7 @@ repl:
 	call reset_input
 
 	mov di, repl_prompt
-	call print
+	call println
 	
 	mov di, input		; start of input array
 	mov bx, 0		; index
@@ -57,7 +57,7 @@ repl:
 	;; add the char to the input array
 	;; note: only certain regs can be used for indexing, di and bx both
 	;; work
-	mov [di+bx], al
+	mov BYTE [di+bx], al
 
 	;; print the char in al
 	mov ah, 0x0e
@@ -68,13 +68,8 @@ repl:
 
 	.eval_print:
 	
-	call print_newline
-
 	mov di, input
-	call print
-
-	call print_newline
-	call print_newline
+	call execute_command
 	
 	jmp repl
 
@@ -92,7 +87,48 @@ repl:
 
 
 ;;; ===========================================================================
-;;; PROCEDURES
+;;; USER COMMANDS
+;;; ===========================================================================
+
+hello:
+;;; Print "Hello, world!"
+	jmp .print
+
+	.str db "Hello, world!",0
+
+	.print:
+	mov di, .str
+	call println
+	ret
+
+reboot:
+;;; Reboot.
+	jmp .print
+
+	.str1 db "See you soon!",0
+	.str2 db "Press any key to reboot.",0
+
+	.print:
+
+	mov di, .str1
+	call println
+
+	mov di, .str2
+	call print_newline
+	call println
+
+	;; Wait for a keypress.
+	mov ah, 0
+	int 0x16
+
+	;; Reboot.
+	;; source: https://stackoverflow.com/a/32686533
+	db 0x0ea
+	dw 0x0000
+	dw 0xffff
+
+;;; ===========================================================================
+;;; INTERNAL PROCEDURES
 ;;; ===========================================================================
 
 reset_input:
@@ -103,15 +139,79 @@ reset_input:
 	jmp .test
 
 	.start:
-
 	mov BYTE [di+bx], 0
 	inc bx
 
 	.test:
-
 	cmp bx, 32
 	jl .start
 
+	ret
+
+execute_command:
+;;; Call a user command.
+;;; Pre: di contains a pointer to the command string.
+	jmp .skipdata
+	
+	.hello_cmd db "hello",0
+	.reboot_cmd db "reboot",0
+
+	.skipdata:
+
+	mov si, .hello_cmd
+	call compare_strings
+	cmp ax, 0
+	je .skiphello
+	call hello
+	ret
+	.skiphello:
+
+	mov si, .reboot_cmd
+	call compare_strings
+	cmp ax, 0
+	je .skipreboot
+	call reboot
+	ret
+	.skipreboot:
+
+	call invalid_command
+	ret
+	
+invalid_command:
+;;; Handle an invalid user command.
+	jmp .print
+
+	.str db "Invalid command.",0
+
+	.print:
+	mov di, .str
+	call println
+	ret
+
+compare_strings:
+;;; Compare two strings.
+;;; Pre: di and si contain pointers to the strings.
+;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
+	mov bx, 0
+
+	.start:
+
+	mov BYTE al, [si+bx]
+	cmp BYTE [di+bx], al
+	jne .false
+
+	cmp BYTE [di+bx], 0
+	je .true
+
+	inc bx
+	jmp .start
+
+	.true:
+	mov ax, 1
+	ret
+
+	.false:
+	mov ax, 0
 	ret
 
 print:
@@ -123,7 +223,7 @@ print:
 
 	.start:
 
-	mov al, [di]
+	mov BYTE al, [di]
 	int 0x10
 	inc di
 
@@ -132,6 +232,13 @@ print:
 	cmp BYTE [di], 0
 	jne .start
 	
+	ret
+
+println:
+;;; Print a string on a new line.
+;;; Pre: di contains a pointer to the beginning of the string.
+	call print_newline
+	call print
 	ret
 
 print_newline:
@@ -144,7 +251,7 @@ print_newline:
 	ret
 
 ;;; ---------------------------------------------------------------------------
-;;; PROCEDURES (end)
+;;; INTERNAL PROCEDURES (end)
 ;;; ---------------------------------------------------------------------------
 
 	times 512-2-($-$$) db 0
