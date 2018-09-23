@@ -391,8 +391,7 @@ print_newline:
 ;;; DATA
 ;;; ===========================================================================
 
-	;; TODO: extent input after implement automatic kernel size calculation
-	input times 32 db 0
+	input times 256 db 0
 	repl_prompt times 32 db 0
 
 	dvorak db 1
