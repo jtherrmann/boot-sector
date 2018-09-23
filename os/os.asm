@@ -1,3 +1,9 @@
+;;; LEFT OFF: incorporate changes from comments and answers (automatically
+;;; compute kernel size, set up stack, improve dvorak lookup, etc.):
+;;; https://stackoverflow.com/q/52463695/10402025
+;;; Note: https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
+;;; has example of setting up the stack
+
 ;;; TODO: clean up, document; search for TODO in file
 	
 ;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
@@ -19,7 +25,7 @@
 	;; adapted from:
 	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
         mov ah, 0x02
-        mov al, 1   
+        mov al, 2
         mov ch, 0    
         mov cl, 2    
         mov dh, 0   
