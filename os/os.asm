@@ -285,9 +285,9 @@ convert_char:
 ;;; Pre: al contains the character as it was entered with QWERTY.
 ;;; Post: al contains the corresponding Dvorak character.
 
-	;; chars <= 0x20 don't need conversion
-	cmp al, 0x20
-	jle .return
+	;; chars < 0x21 don't need conversion
+	cmp al, 0x21
+	jl .return
 
 	;; movzx: https://stackoverflow.com/a/32836665/10402025
 	movzx bx, al
