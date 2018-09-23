@@ -71,10 +71,6 @@
 ;;; and promises to call the command matching that string (or a catch-all command for
 ;;; when the command string is invalid)
 
-	;; TODO: temp
-	mov di, dvorak_keymap
-	call print
-
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -237,34 +233,25 @@ convert_char:
 ;;; Convert a character from qwerty to dvorak.
 ;;; Pre: al contains the character as it was entered with qwerty.
 ;;; Post: al contains the corresponding dvorak character.
-	mov bx, dvorak_keymap
 
-	.loop:
+	;; chars <= 0x20 don't need conversion
+	cmp al, 0x20
+	jle .return
 
-	cmp BYTE [bx], al
-	je .convert
-
-	cmp BYTE [bx], 0
-	je .return
-
-	add bx, 2
-	jmp .loop
-
-	.convert:
-	mov BYTE al, [bx+1]
+	;; movzx: https://stackoverflow.com/a/32836665/10402025
+	movzx bx, al
+	mov BYTE al, [dvorak_keymap+bx-0x21]
 
 	.return:
 	ret
-
-
+	
 execute_command:
 ;;; Call a user command.
 ;;; Pre: di contains a pointer to the command string.
 	jmp .skipdata
 	
 	.hello_cmd db "hello",0
-	;; TODO: name it 'keymap' given space
-	.keymap_cmd db "kmp",0
+	.keymap_cmd db "keymap",0
 	.me_cmd db "me",0
 	.reboot_cmd db "reboot",0
 
@@ -388,66 +375,12 @@ print_newline:
 ;;; DATA
 ;;; ===========================================================================
 
-	input times 16 db 0
-	repl_prompt times 16 db 0
+	;; TODO: extent input after implement automatic kernel size calculation
+	input times 32 db 0
+	repl_prompt times 32 db 0
 
 	dvorak db 1
 
 dvorak_keymap:
-	db "aa"
-	db "nb"
-	db "ic"
-	db "hd"
-	db "de"
-	db "yf"
-	db "ug"
-	db "jh"
-	db "gi"
-	db "cj"
-	db "vk"
-	db "pl"
-	db "mm"
-	db "ln"
-	db "so"
-	db "rp"
-	db "xq"
-	db "or"
-	db ";s"
-	db "kt"
-	db "fu"
-	db ".v"
-	db ",w"
-	db "bx"
-	db "ty"
-	db "/z"
-	db 0
-
-	;; problem: runs out of space here; can it be solved by loading another
-	;; sector (or making our sector larger?), or is it the end of memory altogether?
-
-	;; db "aaAA"
-	;; db "nbNB"
-	;; db "icIC"
-	;; db "hdHD"
-	;; db "deDE"
-	;; db "yfYF"
-	;; db "ugUG"
-	;; db "jhJH"
-	;; db "giGI"
-	;; db "cjCJ"
-	;; db "vkVK"
-	;; db "plPL"
-	;; db "mmMM"
-	;; db "lnLN"
-	;; db "soSO"
-	;; db "rpRP"
-	;; db "xqXQ"
-	;; db "orOR"
-	;; db ";s:S"
-	;; db "ktKT"
-	;; db "fuFU"
-	;; db ".v>V"
-	;; db ",w<W"
-	;; db "bxBX"
-	;; db "tyTY"
-	;; db "/z?Z"
+	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
+	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
