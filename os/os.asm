@@ -12,10 +12,38 @@
 	
 	bits 16
 
+	;; https://stackoverflow.com/q/52461308/10402025
+	section boot, vstart=0x0000
+
+	;; Load next sector.
+	;; adapted from:
+	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
+        mov ah, 0x02
+        mov al, 1   
+        mov ch, 0    
+        mov cl, 2    
+        mov dh, 0   
+        mov bx, new 
+        mov es, bx  
+        xor bx, bx
+        int 0x13
+        jmp new:0
+
+        new equ 0x0500
+
+	times 510-($-$$) db 0
+	db 0x55
+	db 0xaa
+
+	;; https://stackoverflow.com/q/52461308/10402025
+	section os, vstart=0x0000
+	mov ax, new
+	mov ds, ax
+
 	;; https://opensourceforu.com/2017/06/hack-bootsector-write/
 	;; "Set DS (data segment base) as 0x7c0"
-	mov ax, 0x7c0
-	mov ds, ax
+	;; mov ax, 0x7c0
+	;; mov ds, ax
 	;; Also see:
 	;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
 	;; "Segmented Memory" section at bottom of page.
@@ -52,14 +80,6 @@ repl:
 ;;; ---------------------------------------------------------------------------
 ;;; REPL (end)
 ;;; ---------------------------------------------------------------------------
-
-
-;;; ===========================================================================
-;;; DATA
-;;; ===========================================================================
-
-	input times 32 db 0
-	repl_prompt times 32 db 0
 
 
 ;;; ===========================================================================
@@ -298,6 +318,9 @@ print_newline:
 ;;; ---------------------------------------------------------------------------
 
 
-	times 512-2-($-$$) db 0
-	db 0x55
-	db 0xaa
+;;; ===========================================================================
+;;; DATA
+;;; ===========================================================================
+
+	input times 32 db 0
+	repl_prompt times 32 db 0
