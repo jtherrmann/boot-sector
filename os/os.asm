@@ -23,13 +23,13 @@
         mov ch, 0    
         mov cl, 2    
         mov dh, 0   
-        mov bx, new 
+        mov bx, newsector 
         mov es, bx  
         xor bx, bx
         int 0x13
-        jmp new:0
+        jmp newsector:0
 
-        new equ 0x0500
+        newsector equ 0x0500
 
 	times 510-($-$$) db 0
 	db 0x55
@@ -37,7 +37,7 @@
 
 	;; https://stackoverflow.com/q/52461308/10402025
 	section os, vstart=0x0000
-	mov ax, new
+	mov ax, newsector
 	mov ds, ax
 
 	;; https://opensourceforu.com/2017/06/hack-bootsector-write/
