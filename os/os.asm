@@ -103,6 +103,19 @@ hello:
 	call println
 	ret
 
+keymap:
+;;; Toggle between qwerty and dvorak.
+	;; TODO: output which keymap switched to, given space for the output strings
+	cmp BYTE [dvorak], 0
+	je .dvorak
+
+	mov BYTE [dvorak], 0
+	ret
+
+	.dvorak:
+	mov BYTE [dvorak], 1
+	ret
+
 me:
 ;;; Identify the user.
 	jmp .start
@@ -244,6 +257,8 @@ execute_command:
 	jmp .skipdata
 	
 	.hello_cmd db "hello",0
+	;; TODO: name it 'keymap' given space
+	.keymap_cmd db "kmp",0
 	.me_cmd db "me",0
 	.reboot_cmd db "reboot",0
 
@@ -256,6 +271,14 @@ execute_command:
 	call hello
 	ret
 	.skiphello:
+
+	mov si, .keymap_cmd
+	call compare_strings
+	cmp ax, 0
+	je .skipkeymap
+	call keymap
+	ret
+	.skipkeymap:
 
 	mov si, .me_cmd
 	call compare_strings
