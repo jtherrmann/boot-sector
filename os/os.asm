@@ -21,21 +21,25 @@
 	;; https://stackoverflow.com/q/52461308/10402025
 	section boot, vstart=0x0000
 
-	;; Load next sector.
+	;; Load sectors.
 	;; adapted from:
 	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
         mov ah, 0x02
-        mov al, 2
+
+	;; Calculate the size of the operating system in 512B sectors.
+	;; source: https://stackoverflow.com/q/52463695/10402025
+        mov al, (os_end-os_start+511)/512
+
         mov ch, 0    
         mov cl, 2    
         mov dh, 0   
-        mov bx, newsector 
+        mov bx, os_sectors 
         mov es, bx  
         xor bx, bx
         int 0x13
-        jmp newsector:0
+        jmp os_sectors:0
 
-        newsector equ 0x0500
+        os_sectors equ 0x0500
 
 	times 510-($-$$) db 0
 	db 0x55
@@ -43,7 +47,8 @@
 
 	;; https://stackoverflow.com/q/52461308/10402025
 	section os, vstart=0x0000
-	mov ax, newsector
+os_start:	
+	mov ax, os_sectors
 	mov ds, ax
 
 	;; https://opensourceforu.com/2017/06/hack-bootsector-write/
@@ -395,3 +400,5 @@ print_newline:
 dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
+
+os_end:	
