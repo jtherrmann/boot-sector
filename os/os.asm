@@ -1,5 +1,5 @@
 ;;; LEFT OFF: incorporate changes from comments and answers (automatically
-;;; compute kernel size, set up stack, improve dvorak lookup, etc.):
+;;; compute kernel size, set up stack, etc.):
 ;;; https://stackoverflow.com/q/52463695/10402025
 ;;; Note: https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
 ;;; has example of setting up the stack
@@ -106,15 +106,26 @@ hello:
 	ret
 
 keymap:
-;;; Toggle between qwerty and dvorak.
-	;; TODO: output which keymap switched to, given space for the output strings
+;;; Toggle between QWERTY and Dvorak.
+	jmp .start
+
+	.qwertystr db "Layout: QWERTY",0
+	.dvorakstr db "Layout: Dvorak",0
+
+	.start:
+
 	cmp BYTE [dvorak], 0
 	je .dvorak
 
+	mov di, .qwertystr
+	call println
 	mov BYTE [dvorak], 0
 	ret
 
 	.dvorak:
+
+	mov di, .dvorakstr
+	call println
 	mov BYTE [dvorak], 1
 	ret
 
@@ -230,9 +241,9 @@ getstr:
 	ret
 
 convert_char:
-;;; Convert a character from qwerty to dvorak.
-;;; Pre: al contains the character as it was entered with qwerty.
-;;; Post: al contains the corresponding dvorak character.
+;;; Convert a character from QWERTY to Dvorak.
+;;; Pre: al contains the character as it was entered with QWERTY.
+;;; Post: al contains the corresponding Dvorak character.
 
 	;; chars <= 0x20 don't need conversion
 	cmp al, 0x20
