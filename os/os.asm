@@ -1,8 +1,5 @@
-;;; LEFT OFF: incorporate changes from comments and answers (automatically
-;;; compute kernel size, set up stack, etc.):
+;;; LEFT OFF: incorporate changes from comments and answers:
 ;;; https://stackoverflow.com/q/52463695/10402025
-;;; Note: https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
-;;; has example of setting up the stack
 
 ;;; TODO: clean up, document; search for TODO in file
 	
@@ -17,6 +14,12 @@
 ;;; for reference: https://wiki.osdev.org/Real_mode_assembly_I#So_where.27s_the_code.3F
 
 	BITS 16
+
+	;; TODO: apply Michael Petch's boot loader tips:
+	;; https://stackoverflow.com/a/32705076/10402025
+	;; linked from: https://stackoverflow.com/a/34095896/10402025
+	;; also referenced from:
+	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
 	
 ;;; ===========================================================================
 ;;; Boot loader
@@ -25,8 +28,9 @@
 	;; Special thanks to Michael Petch for his help with the boot loader!
 	;; https://stackoverflow.com/users/3857942/michael-petch
 
-	;; sources:
+	;; General sources:
 	;; - https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
+	;; - https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH=02h:_Read_Sectors_From_Drive
 	;; - https://wiki.osdev.org/Real_Mode#The_Stack
 	;; - Michael Petch:
 	;;   - https://stackoverflow.com/q/52461308/10402025
@@ -34,29 +38,51 @@
 
 	section boot, vstart=0x0000
 
-	;; Set up the stack above the OS load point.
-	;; SS:SP is the segment:offset of the "top" of the stack.
-	;; Set SS:SP to 0x0060:0x0000 so that the stack grows down from
-	;; 0x0060:0xFFFF toward the "top" of the stack at 0x0060:0x0000.
-	os_load_point equ 0x0060
-	mov ax, os_load_point
+	os_load_start equ 0x0060
+
+	;; Set up the stack above where the OS is loaded.
+	;; 
+	;; Set SS (the Stack Segment register) to os_load_start and SP
+	;; (the Stack Pointer) to 0x0000 so that the stack grows down from
+	;; os_load_start:0xFFFF toward the "top" of the stack at
+	;; os_load_start:0x0000.
+	mov ax, os_load_start
 	mov ss, ax
 	xor sp, sp
 
-        mov ah, 0x02
-
-	;; Calculate the size of the operating system in 512B sectors.
+	;; Number of 512B sectors to read from the drive.
         mov al, (os_end-os_start+511)/512
 
-        mov ch, 0    
-        mov cl, 2    
-        mov dh, 0   
-        mov bx, os_load_point 
+        mov ch, 0  ; cylinder
+        mov cl, 2  ; starting sector
+        mov dh, 0  ; drive head
+
+	;; Set ES (the Extra Segment register) to os_load_start and BX to
+	;; 0x0000 so that we load the sectors into memory starting at
+	;; os_load_start:0x0000.
+	;; 
+	;; https://stackoverflow.com/a/32705076/10402025
+	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
+        mov bx, os_load_start 
         mov es, bx  
         xor bx, bx
-        int 0x13
-        jmp os_load_point:0
 
+	;; Read the sectors.
+        mov ah, 0x02
+        int 0x13
+
+	;; Far jump to os_load_start:0x0000.
+	;; 
+	;; Set CS (the Code Segment register) to os_load_start and the
+	;; instruction pointer to 0x0000, so the CPU begins executing
+	;; instructions at os_load_start:0x0000.
+	;; 
+	;; https://wiki.osdev.org/Segmentation#Far_Jump
+	;; https://stackoverflow.com/a/47249973/10402025
+	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
+        jmp os_load_start:0x0000
+
+	;; Pad boot sector to boot signature.
 	times 510-($-$$) db 0
 	db 0x55
 	db 0xaa
@@ -71,19 +97,13 @@
 
 	section os, vstart=0x0000
 os_start:	
-	mov ax, os_load_point
-	mov ds, ax
 
-	;; https://opensourceforu.com/2017/06/hack-bootsector-write/
-	;; "Set DS (data segment base) as 0x7c0"
-	;; mov ax, 0x7c0
-	;; mov ds, ax
-	;; Also see:
-	;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
-	;; "Segmented Memory" section at bottom of page.
-	;;
-	;; without the above lines, printing chars with the BIOS interrupt (see
-	;; `print`) just outputs random chars, not the ones in our string
+	;; Set DS (the Data Segment register) to os_load_start.
+	;; 
+	;; Michael Petch: https://stackoverflow.com/q/52461308/10402025
+	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
+	mov ax, os_load_start
+	mov ds, ax
 
 ;;; ===========================================================================
 ;;; REPL
@@ -184,7 +204,6 @@ me:
 	cmp BYTE [di+bx], 0
 	jne .loop
 
-	;; TODO: should stop writing at length 29 to leave room for:
 	mov BYTE [si+bx+0], '>'
 	mov BYTE [si+bx+1], ' '
 	mov BYTE [si+bx+2], 0
