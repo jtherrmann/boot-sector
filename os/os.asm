@@ -65,6 +65,10 @@
 ;;; and promises to call the command matching that string (or a catch-all command for
 ;;; when the command string is invalid)
 
+	;; TODO: temp
+	mov di, dvorak_keymap
+	call print
+
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -118,7 +122,7 @@ me:
 	jmp .test
 
 	.loop:
-	mov al, [di+bx]
+	mov BYTE al, [di+bx]
 	mov BYTE [si+bx], al
 	inc bx
 
@@ -183,6 +187,15 @@ getstr:
 	cmp al, 0x0d
 	je .return
 
+	cmp BYTE [dvorak], 0
+	je .skipdvorak
+
+	push bx
+	call convert_char
+	pop bx
+
+	.skipdvorak:
+
 	;; add the char to the input array
 	;; TODO: document:
 	;; note: only certain regs can be used for indexing, di and bx both
@@ -193,13 +206,37 @@ getstr:
 	;; print the char in al
 	mov ah, 0x0e
 	int 0x10
-	
+
 	inc bx
 	jmp .loop
 
 	.return:
 	mov BYTE [di+bx], 0
 	ret
+
+convert_char:
+;;; Convert a character from qwerty to dvorak.
+;;; Pre: al contains the character as it was entered with qwerty.
+;;; Post: al contains the corresponding dvorak character.
+	mov bx, dvorak_keymap
+
+	.loop:
+
+	cmp BYTE [bx], al
+	je .convert
+
+	cmp BYTE [bx], 0
+	je .return
+
+	add bx, 2
+	jmp .loop
+
+	.convert:
+	mov BYTE al, [bx+1]
+
+	.return:
+	ret
+
 
 execute_command:
 ;;; Call a user command.
@@ -322,5 +359,66 @@ print_newline:
 ;;; DATA
 ;;; ===========================================================================
 
-	input times 32 db 0
-	repl_prompt times 32 db 0
+	input times 16 db 0
+	repl_prompt times 16 db 0
+
+	dvorak db 1
+
+dvorak_keymap:
+	db "aa"
+	db "nb"
+	db "ic"
+	db "hd"
+	db "de"
+	db "yf"
+	db "ug"
+	db "jh"
+	db "gi"
+	db "cj"
+	db "vk"
+	db "pl"
+	db "mm"
+	db "ln"
+	db "so"
+	db "rp"
+	db "xq"
+	db "or"
+	db ";s"
+	db "kt"
+	db "fu"
+	db ".v"
+	db ",w"
+	db "bx"
+	db "ty"
+	db "/z"
+	db 0
+
+	;; problem: runs out of space here; can it be solved by loading another
+	;; sector (or making our sector larger?), or is it the end of memory altogether?
+
+	;; db "aaAA"
+	;; db "nbNB"
+	;; db "icIC"
+	;; db "hdHD"
+	;; db "deDE"
+	;; db "yfYF"
+	;; db "ugUG"
+	;; db "jhJH"
+	;; db "giGI"
+	;; db "cjCJ"
+	;; db "vkVK"
+	;; db "plPL"
+	;; db "mmMM"
+	;; db "lnLN"
+	;; db "soSO"
+	;; db "rpRP"
+	;; db "xqXQ"
+	;; db "orOR"
+	;; db ";s:S"
+	;; db "ktKT"
+	;; db "fuFU"
+	;; db ".v>V"
+	;; db ",w<W"
+	;; db "bxBX"
+	;; db "tyTY"
+	;; db "/z?Z"
