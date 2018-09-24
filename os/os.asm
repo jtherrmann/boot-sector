@@ -110,16 +110,6 @@ os_start:
 ;;; REPL
 ;;; ===========================================================================
 
-;;; NEXT: compare strings procedure (di points to one, si to the other)
-;;; use this to implement commands
-;;; can have a command lookup table; series of pointer pairs; for each pair, first
-;;; points to a pointer to a str, second points to a pointer to a procedure;
-;;; for each first pointer, check if its string is the command, and if it is then
-;;; call the second pointer's procedure, otherwise go to the next pointer pair
-;;; can have a procedure for doing this, that just takes a pointer to the command string
-;;; and promises to call the command matching that string (or a catch-all command for
-;;; when the command string is invalid)
-
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -232,6 +222,17 @@ reboot:
 	db 0x0ea
 	dw 0x0000
 	dw 0xffff
+	
+invalid_command:
+;;; Handle an invalid user command.
+	jmp .print
+
+	.str db "Invalid command.",0
+
+	.print:
+	mov di, .str
+	call println
+	ret
 
 ;;; ---------------------------------------------------------------------------
 ;;; User commands (end)
@@ -303,63 +304,34 @@ convert_char:
 
 	.return:
 	ret
-	
+
 execute_command:
-;;; Call a user command.
-;;; Pre: di contains a pointer to the command string.
-	jmp .skipdata
-	
-	.hello_cmd db "hello",0
-	.keymap_cmd db "keymap",0
-	.me_cmd db "me",0
-	.reboot_cmd db "reboot",0
+;;; Call a command given an input string.
+;;; Pre: di points to the input string.
+	mov bx, command_table
+	jmp .test
 
-	.skipdata:
+	.loop:
 
-	mov si, .hello_cmd
+	;; Advance to the next command string.
+	add bx, 4
+
+	.test:
+
+	;; Compare the current command string with the input string.
+	mov si, [bx]
+	push bx
 	call compare_strings
+	pop bx
+
+	;; Loop if the strings are not equal.
 	cmp ax, 0
-	je .skiphello
-	call hello
-	ret
-	.skiphello:
+	je .loop
 
-	mov si, .keymap_cmd
-	call compare_strings
-	cmp ax, 0
-	je .skipkeymap
-	call keymap
-	ret
-	.skipkeymap:
-
-	mov si, .me_cmd
-	call compare_strings
-	cmp ax, 0
-	je .skipme
-	call me
-	ret
-	.skipme:
-
-	mov si, .reboot_cmd
-	call compare_strings
-	cmp ax, 0
-	je .skipreboot
-	call reboot
-	ret
-	.skipreboot:
-
-	call invalid_command
-	ret
-	
-invalid_command:
-;;; Handle an invalid user command.
-	jmp .print
-
-	.str db "Invalid command.",0
-
-	.print:
-	mov di, .str
-	call println
+	;; The command and input strings are equal, so call the procedure that
+	;; follows the command string in the table.
+	add bx, 2
+	call [bx]
 	ret
 
 compare_strings:
@@ -442,5 +414,26 @@ print_newline:
 dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
+
+	hello_str db "hello",0
+	me_str db "me",0
+	keymap_str db "keymap",0
+	reboot_str db "reboot",0
+
+command_table:
+	dw hello_str
+	dw hello
+
+	dw me_str
+	dw me
+
+	dw keymap_str
+	dw keymap
+
+	dw reboot_str
+	dw reboot
+
+	dw input
+	dw invalid_command
 
 os_end:	
