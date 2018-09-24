@@ -442,7 +442,7 @@ dvorak_keymap:
 	;; The help command prints the first help_list_len commands from the
 	;; command table. Commands located after this position are meant to be
 	;; discovered by the user. :)
-	help_list_len dw 5
+	help_list_len dw 4
 
 ;;; Command strings:
 
@@ -450,7 +450,6 @@ dvorak_keymap:
 	;; command_table. This is for code readability and does not affect
 	;; the program's behavior.
 
-	help_str db "help",0
 	hello_str db "hello",0
 	me_str db "me",0
 	keymap_str db "keymap",0
@@ -458,12 +457,10 @@ dvorak_keymap:
 
 	;; Commands not listed by help:
 
+	help_str db "help",0
 	sos_str db "...---...",0
 
 command_table:
-	dw help_str
-	dw help
-
 	dw hello_str
 	dw hello
 
@@ -477,6 +474,9 @@ command_table:
 	dw reboot
 
 	;; Commands not listed by help:
+
+	dw help_str
+	dw help
 
 	dw sos_str
 	dw help
