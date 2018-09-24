@@ -2,6 +2,10 @@
 ;;; https://stackoverflow.com/q/52463695/10402025
 
 ;;; TODO: clean up, document; search for TODO in file
+
+;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
+;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
+;;; the end of the line
 	
 ;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
 ;;; compile:
@@ -242,6 +246,10 @@ getstr:
 ;;; Read a string from keyboard input.
 ;;; Pre: di points to an array.
 ;;; Post: di points to the same array, which now contains the string.
+
+	;; TODO: add support for backspace; and ideally support for C-h
+	;; (translate to backspace) and C-m (translate to carriage ret)
+
 	mov bx, 0	; index
 	.loop:
 	
