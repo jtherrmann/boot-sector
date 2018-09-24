@@ -319,7 +319,7 @@ execute_command:
 	.test:
 
 	;; Compare the current command string with the input string.
-	mov si, [bx]
+	mov WORD si, [bx]
 	push bx
 	call compare_strings
 	pop bx
