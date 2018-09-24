@@ -127,7 +127,31 @@ repl:
 ;;; User commands
 ;;; ===========================================================================
 
-;;; TODO: "help" command to list all commands
+help:
+;;; Print a list of commands.
+	xor ax, ax
+	mov bx, command_table
+	jmp .test
+
+	.loop:
+
+	mov WORD di, [bx]
+	push ax
+	push bx
+	call println
+	pop bx
+	pop ax
+
+	;; Advance to the next command string.
+	add bx, 4
+	inc ax
+
+	.test:
+
+	cmp ax, [help_list_len]
+	jl .loop
+
+	ret
 
 hello:
 ;;; Print "Hello, world!"
@@ -415,12 +439,31 @@ dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
 
+	;; The help command prints the first help_list_len commands from the
+	;; command table. Commands located after this position are meant to be
+	;; discovered by the user. :)
+	help_list_len dw 5
+
+;;; Command strings:
+
+	;; These are provided in the same order as they are referenced in the
+	;; command_table. This is for code readability and does not affect
+	;; the program's behavior.
+
+	help_str db "help",0
 	hello_str db "hello",0
 	me_str db "me",0
 	keymap_str db "keymap",0
 	reboot_str db "reboot",0
 
+	;; Commands not listed by help:
+
+	help_str2 db "S.O.S.",0
+
 command_table:
+	dw help_str
+	dw help
+
 	dw hello_str
 	dw hello
 
@@ -433,6 +476,13 @@ command_table:
 	dw reboot_str
 	dw reboot
 
+	;; Commands not listed by help:
+
+	dw help_str2
+	dw help
+
+	;; Allows execute_command to always call invalid_command if the input
+	;; string does not match any of the above command strings.
 	dw input
 	dw invalid_command
 
