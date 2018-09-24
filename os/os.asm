@@ -18,8 +18,6 @@
 ;;; test:
 ;;; qemu-system-x86_64 boot.bin
 
-;;; TODO: improve printing? at least for the help output?
-
 	BITS 16
 
 	;; TODO: apply Michael Petch's boot loader tips:
