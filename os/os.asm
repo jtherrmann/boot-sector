@@ -1,21 +1,24 @@
-;;; LEFT OFF: incorporate changes from comments and answers:
+;;; TODO: incorporate changes from comments and answers:
 ;;; https://stackoverflow.com/q/52463695/10402025
 
-;;; TODO: clean up, document; search for TODO in file
+;;; TODO: clean up, document; search for TODO, FIXME in file; also search for other
+;;; stuff to be addressed/cleaned up that's not marked with TODO or FIXME
 
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
 	
+;;; TODO: clean up
 ;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
 ;;; compile:
 ;;; nasm -f bin -o boot.bin boot.asm
 
+;;; TODO: clean up
 ;;; https://opensourceforu.com/2017/06/hack-bootsector-write/
 ;;; test:
 ;;; qemu-system-x86_64 boot.bin
 
-;;; for reference: https://wiki.osdev.org/Real_mode_assembly_I#So_where.27s_the_code.3F
+;;; TODO: improve printing? at least for the help output?
 
 	BITS 16
 
@@ -242,7 +245,7 @@ reboot:
 	int 0x16
 
 	;; Reboot.
-	;; source: https://stackoverflow.com/a/32686533
+	;; https://stackoverflow.com/a/32686533
 	db 0x0ea
 	dw 0x0000
 	dw 0xffff
