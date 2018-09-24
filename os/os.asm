@@ -458,10 +458,7 @@ dvorak_keymap:
 
 	;; Commands not listed by help:
 
-	SOS_str db "SOS",0
-	;; TODO: allow sos_morse_str command to print listed AND unlisted commands?
-	;; or maybe if it's repeated 3 times?
-	sos_morse_str db "...---...",0
+	sos_str db "...---...",0
 
 command_table:
 	dw help_str
@@ -481,10 +478,7 @@ command_table:
 
 	;; Commands not listed by help:
 
-	dw SOS_str
-	dw help
-
-	dw sos_morse_str
+	dw sos_str
 	dw help
 
 	;; Allows execute_command to always call invalid_command if the input
