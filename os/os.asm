@@ -144,6 +144,17 @@ repl:
 ;;; User commands
 ;;; ===========================================================================
 
+hello:
+;;; Print "Hello, world!"
+	jmp .print
+
+	.str db "Hello, world!",0
+
+	.print:
+	mov di, .str
+	call println
+	ret
+
 help:
 ;;; Print a list of commands.
 	xor ax, ax
@@ -168,17 +179,6 @@ help:
 	cmp ax, [help_list_len]
 	jl .loop
 
-	ret
-
-hello:
-;;; Print "Hello, world!"
-	jmp .print
-
-	.str db "Hello, world!",0
-
-	.print:
-	mov di, .str
-	call println
 	ret
 
 keymap:
