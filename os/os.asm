@@ -16,6 +16,8 @@
 
 ;;; TODO: treating ALL registers as protected (must be pushed/popped at
 ;;; start/end of each procedure) might make things a lot easier
+;;; review every function and do this; then search for push/pop throughout code
+;;; and remove unnecessary ones
 
 ;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
 ;;; use movsx for sign extension, if needed
@@ -188,11 +190,7 @@ help:
 	.loop:
 
 	mov WORD di, [bx]
-	push ax
-	push bx
 	call println
-	pop bx
-	pop ax
 
 	;; Advance to the next command string.
 	add bx, 4
@@ -448,9 +446,7 @@ println_num:
 ;;; Pre: ax contains the number.
 ;;;
 ;;; Only accurately prints numbers in the range -32768 <= n < 32768.
-	push ax
 	call print_newline
-	pop ax
 	call print_num
 	ret
 
@@ -700,6 +696,11 @@ compare_strings:
 print:
 ;;; Print a string.
 ;;; Pre: di contains a pointer to the beginning of the string.
+
+	;; save
+	push ax
+	push bx
+	
 	mov ah, 0x0e
 
 	mov bx, 0
@@ -715,6 +716,10 @@ print:
 
 	cmp BYTE [di+bx], 0
 	jne .loop
+
+	;; restore
+	pop bx
+	pop ax
 	
 	ret
 
@@ -726,12 +731,17 @@ println:
 	ret
 
 print_newline:
-;;; Move the cursor to the beginning of the next line.
+;;; Move the cursor to the start of the next line.
+	push ax  ; save
+
 	mov ah, 0x0e
-	mov al, 0x0d	; carriage ret
+	mov al, 0x0d  ; carriage ret
 	int 0x10
-	mov al, 0x0a	; newline
+
+	mov al, 0x0a  ; newline
 	int 0x10
+
+	pop ax  ; restore
 	ret
 
 ;;; ---------------------------------------------------------------------------
