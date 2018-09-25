@@ -12,6 +12,8 @@
 ;;; the shell is just another application (that gets executed at startup); move
 ;;; REPL section into a shell procedure and execute it at startup
 
+;;; TODO: check for correct usage of "operator" and "operand".
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
@@ -149,8 +151,15 @@ repl:
 
 
 ;;; ===========================================================================
-;;; User commands
+;;; Shell commands
 ;;; ===========================================================================
+
+;;; TODO: prefix names w/ something like cmd_? (or _cmd suffix)
+
+calc:
+;;; Start the calculator.
+	call calculator
+	ret
 
 hello:
 ;;; Print "Hello, world!"
@@ -284,7 +293,197 @@ invalid_command:
 	ret
 
 ;;; ---------------------------------------------------------------------------
-;;; User commands (end)
+;;; Shell commands (end)
+;;; ---------------------------------------------------------------------------
+
+;;; TODO: better headings; maybe just exactly like RST:
+;;; http://docutils.sourceforge.net/docs/user/rst/quickstart.html
+
+;;; ===========================================================================
+;;; Applications
+;;; ===========================================================================
+
+;;; TODO: Calculator heading
+;;; TODO: diff name; vlc? (very lazy calculator; e.g. if no negatives, esp. if
+;;; no nums outside 0-9
+
+;;; TODO: method of exiting; welcome message w/ info about RPN/postfix
+calculator:
+;;; Calculator.
+	.loop:
+
+	mov di, calc_prompt
+	call println
+
+	mov di, input
+	call getstr
+	call calc_eval
+	jmp .loop
+
+	ret
+
+;;; TODO: double check all sizes, and in helper funcs
+calc_eval:
+;;; Evaluate a calculator expression.
+;;; Pre: di points to the input string.
+
+	;; Note that the stack stores one-word (two-byte) items.
+	;; https://wiki.osdev.org/Real_Mode#The_Stack
+
+	;; Stack offset (starts at 0B).
+	;; Increases 2B with each push and decreases 2B with each pop.
+	;; Should never be allowed to fall below 0B.
+	xor bx, bx
+
+	jmp .test
+
+	.toofewstr db "Too few operands.",0
+	.toomanystr db "Too many operands.",0
+
+	.loop:
+
+	;; Check if the current input char represents a number 0-9.
+	;; If not, treat the char as an operator.
+	cmp BYTE [di], 0x30
+	jl .operator
+	cmp BYTE [di], 0x39
+	jg .operator
+
+	;; Convert the number from char to int and push it, then jump to the
+	;; end of the loop.
+	mov WORD cx, [di]
+	sub cx, 0x30
+	push cx
+	add bx, 2  ; Stack offset increases by 2B.
+	jmp .inc
+
+	.operator:
+	;; Treat the current input char as an operator.
+
+	;; Exit the loop if we've encountered the operator while number of
+	;; operands on the stack < 2 (stack offset < 4B).
+	cmp bx, 4
+	jl .toofew
+
+	mov BYTE dl, [di]  ; operator
+
+	pop si  ; second operand
+	pop cx  ; first operand
+	sub bx, 4  ; Stack offset decreases by 4B.
+
+	push di  ; Save input string pointer.
+	mov di, cx
+	call apply_operator
+	pop di  ; Restore input string pointer.
+
+	;; Push the result.
+	push ax
+	add bx, 2  ; Stack offset increases by 2B.
+
+	;; Advance to the next input char.
+	.inc:
+	inc di
+
+	;; Check the input string for the null-terminator.
+	.test:
+	cmp BYTE [di], 0
+	jne .loop
+
+	;; Done reading the input string (exit the loop).
+
+	;; Pop the final result.
+	pop ax
+	sub bx, 2  ; Stack offset decreases by 2B.
+
+	push ax  ; Save final result.
+	call print_newline
+	pop ax  ; Restore final result.
+
+	;; Convert the final result from int to char and print it.
+	add ax, 0x30
+	;; TODO: it prints from al which is only a byte so can only contain
+	;; an ascii code; how to print a multi-digit number from ax?
+	mov ah, 0x0e
+	int 0x10
+
+	;; Error if number of operands remaining on the stack > 0 (stack offset
+	;; > 0B).
+	cmp bx, 0
+	jg .toomany
+
+	;; The stack offset was 0B as expected.
+	jmp .return
+
+	;; Encountered an operator with too few operands. Fix the stack and
+	;; notify the user.
+	.toofew:
+	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov di, .toofewstr
+	call println
+	jmp .return
+
+	;; The expression contains too many operands. Fix the stack and notify
+	;; the user.
+	.toomany:
+	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov di, .toomanystr
+	call println
+
+	;; The stack offset is back to 0B, either because the expression
+	;; contained properly balanced operators and operands or because we
+	;; fixed the stack.
+	.return:
+	ret
+
+;;; TODO: operator lookup table
+apply_operator:
+;;; Apply an operator to two operands.
+;;; Pre: di contains the first operand, si the second operand, and dl the
+;;; operator.
+;;; Post: ax contains the result.
+	jmp .start
+
+	.errorstr db "Invalid operand.",0
+
+	.start:
+
+	cmp BYTE dl, '+'
+	jne .skipadd
+	call add_op
+	jmp .return
+	.skipadd:
+
+	cmp BYTE dl, '-'
+	jne .error
+	call sub_op
+	jmp .return
+
+	;; TODO: why does it crash here?
+	.error:
+	mov di, .errorstr
+	call println
+
+	.return:
+	ret
+
+add_op:
+;;; Addition operator.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di + si.
+	mov ax, di
+	add ax, si
+	ret
+
+sub_op:
+;;; Subtraction operator.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di - si.
+	mov ax, di
+	sub ax, si
+	ret
+
+;;; ---------------------------------------------------------------------------
+;;; Applications (end)
 ;;; ---------------------------------------------------------------------------
 
 
@@ -457,6 +656,7 @@ print_newline:
 
 	input times 256 db 0
 	repl_prompt times 32 db 0
+	calc_prompt db "calc> ",0
 
 	dvorak db 1
 
@@ -471,6 +671,7 @@ dvorak_keymap:
 
 ;;; Command strings:
 
+	calc_str db "cc",0	; TODO
 	hello_str db "hello",0
 	help_str db "help",0
 	keymap_str db "keymap",0
@@ -482,6 +683,9 @@ dvorak_keymap:
 	sos_str db "...---...",0
 
 command_table:
+	dw calc_str
+	dw calc
+
 	dw hello_str
 	dw hello
 
