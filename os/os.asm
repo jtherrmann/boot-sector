@@ -18,6 +18,7 @@
 ;;; start/end of each procedure) might make things a lot easier
 ;;; review every function and do this; then search for push/pop throughout code
 ;;; and remove unnecessary ones
+;;; make sure that all functions only have one ret
 
 ;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
 ;;; use movsx for sign extension, if needed
@@ -172,6 +173,7 @@ calc:
 
 hello:
 ;;; Print "Hello, world!"
+	push di  ; save
 	jmp .print
 
 	.str db "Hello, world!",0
@@ -179,10 +181,18 @@ hello:
 	.print:
 	mov di, .str
 	call println
+
+	pop di  ; restore
 	ret
 
 help:
 ;;; Print a list of commands.
+
+	;; save
+	push ax
+	push bx
+	push di
+
 	xor ax, ax
 	mov bx, command_table
 	jmp .test
@@ -201,10 +211,16 @@ help:
 	cmp ax, [help_list_len]
 	jl .loop
 
+	;; restore
+	pop di
+	pop bx
+	pop ax
+
 	ret
 
 keymap:
 ;;; Toggle between QWERTY and Dvorak.
+	push di  ; save
 	jmp .start
 
 	.qwertystr db "Layout: QWERTY",0
@@ -218,17 +234,27 @@ keymap:
 	mov di, .qwertystr
 	call println
 	mov BYTE [dvorak], 0
-	ret
+	jmp .return
 
 	.dvorak:
 
 	mov di, .dvorakstr
 	call println
 	mov BYTE [dvorak], 1
+
+	.return:
+	pop di  ; restore
 	ret
 
 me:
 ;;; Identify the user.
+
+	;; save
+	push ax
+	push bx
+	push di
+	push si
+
 	jmp .start
 
 	.str db "Who are you? ",0
@@ -257,6 +283,12 @@ me:
 	mov BYTE [si+bx+0], '>'
 	mov BYTE [si+bx+1], ' '
 	mov BYTE [si+bx+2], 0
+
+	;; restore
+	pop si
+	pop di
+	pop bx
+	pop ax
 
 	ret
 
@@ -288,6 +320,7 @@ reboot:
 	
 invalid_command:
 ;;; Handle an invalid user command.
+	push di  ; save
 	jmp .print
 
 	.str db "Invalid command.",0
@@ -295,6 +328,8 @@ invalid_command:
 	.print:
 	mov di, .str
 	call println
+
+	pop di  ; restore
 	ret
 
 ;;; ---------------------------------------------------------------------------
@@ -763,10 +798,11 @@ dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
 
+	;; TODO: double-check that this value is correct
 	;; The help command prints the first help_list_len commands from the
 	;; command table. Commands located after this position are meant to be
 	;; discovered by the user. :)
-	help_list_len dw 5
+	help_list_len dw 6
 
 ;;; Command strings:
 
