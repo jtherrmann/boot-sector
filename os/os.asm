@@ -137,6 +137,10 @@ os_start:
 ;;; REPL
 ;;; ===========================================================================
 
+	;; TODO: temp
+	mov ax, 41239
+	call print_num
+
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -308,6 +312,7 @@ invalid_command:
 ;;; no nums outside 0-9
 
 ;;; TODO: method of exiting; welcome message w/ info about RPN/postfix
+;;; in welcome message include limitations (e.g. max/min values for a number)
 calculator:
 ;;; Calculator.
 	.loop:
@@ -434,6 +439,54 @@ calc_eval:
 	;; contained properly balanced operators and operands or because we
 	;; fixed the stack.
 	.return:
+	ret
+
+;;; TODO: doesn't work for negative nums
+;;; maybe if negative, get abs val and print it w/ - sign in front
+print_num:
+;;; Print a number.
+;;; Pre: ax contains the number.
+
+	;; Number of digits pushed onto the stack.
+	xor cx, cx
+
+	.parseloop:
+	
+	;; div divides dx:ax by the operand. ax stores the quotient and dx
+	;; stores the remainder.
+	;; source: https://stackoverflow.com/a/8022107/10402025
+
+	;; Divide our number (ax) by 10.
+	xor dx, dx
+	mov bx, 10
+	div bx
+
+	;; Convert the remainder from int to char and push it.
+	add dx, 0x30
+	push dx
+	inc cx  ; Number of digits pushed onto the stack.
+
+	;; Continue the loop if the quotient != 0.
+	cmp ax, 0
+	jne .parseloop
+
+	;; Done parsing the number. Now print it:
+
+	jmp .test
+	.printloop:
+
+	;; Pop a digit and print it.
+	pop dx
+	mov BYTE al, dl
+	mov ah, 0x0e
+	int 0x10
+
+	dec cx  ; Number of digits left on the stack.
+
+	.test:
+	cmp cx, 0
+	jg .printloop
+
 	ret
 
 ;;; TODO: operator lookup table
