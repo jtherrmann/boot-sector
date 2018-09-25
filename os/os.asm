@@ -322,6 +322,7 @@ calculator:
 
 	ret
 
+;;; TODO: should not print result when too many operands
 ;;; TODO: double check all sizes, and in helper funcs
 calc_eval:
 ;;; Evaluate a calculator expression.
