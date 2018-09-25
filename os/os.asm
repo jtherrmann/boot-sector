@@ -14,6 +14,13 @@
 
 ;;; TODO: check for correct usage of "operator" and "operand".
 
+;;; TODO: treating ALL registers as protected (must be pushed/popped at
+;;; start/end of each procedure) might make things a lot easier
+
+;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
+;;; use movsx for sign extension, if needed
+;;; https://stackoverflow.com/a/32836665/10402025
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
@@ -136,10 +143,6 @@ os_start:
 ;;; ===========================================================================
 ;;; REPL
 ;;; ===========================================================================
-
-	;; TODO: temp
-	mov ax, 41239
-	call print_num
 
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
@@ -329,6 +332,8 @@ calculator:
 
 ;;; TODO: should not print result when too many operands
 ;;; TODO: double check all sizes, and in helper funcs
+;;; TODO: detect & handle numbers out of bounds (e.g. there are conditional
+;;; overflow jump instructions; maybe in lecture notes?)
 calc_eval:
 ;;; Evaluate a calculator expression.
 ;;; Pre: di points to the input string.
@@ -357,7 +362,10 @@ calc_eval:
 
 	;; Convert the number from char to int and push it, then jump to the
 	;; end of the loop.
-	mov WORD cx, [di]
+	;; 
+	;; Use movzx to zero-extend the high bits of cx.
+	;; https://stackoverflow.com/a/32836665/10402025
+	movzx WORD cx, [di]
 	sub cx, 0x30
 	push cx
 	add bx, 2  ; Stack offset increases by 2B.
@@ -401,16 +409,10 @@ calc_eval:
 	pop ax
 	sub bx, 2  ; Stack offset decreases by 2B.
 
-	push ax  ; Save final result.
-	call print_newline
-	pop ax  ; Restore final result.
-
-	;; Convert the final result from int to char and print it.
-	add ax, 0x30
-	;; TODO: it prints from al which is only a byte so can only contain
-	;; an ascii code; how to print a multi-digit number from ax?
-	mov ah, 0x0e
-	int 0x10
+	;; Print the final result.
+	push bx  ; Save stack offset.
+	call println_num
+	pop bx  ; Restore stack offset.
 
 	;; Error if number of operands remaining on the stack > 0 (stack offset
 	;; > 0B).
@@ -441,11 +443,42 @@ calc_eval:
 	.return:
 	ret
 
-;;; TODO: doesn't work for negative nums
-;;; maybe if negative, get abs val and print it w/ - sign in front
+println_num:
+;;; Print a number preceded by a newline.
+;;; Pre: ax contains the number.
+;;;
+;;; Only accurately prints numbers in the range -32768 <= n < 32768.
+	push ax
+	call print_newline
+	pop ax
+	call print_num
+	ret
+
 print_num:
 ;;; Print a number.
 ;;; Pre: ax contains the number.
+;;;
+;;; Only accurately prints numbers in the range -32768 <= n < 32768.
+	cmp ax, 0
+	jge .positive
+
+	;; ax < 0
+
+	;; Set ax to its absolute value.
+	xor bx, bx
+	sub bx, ax
+	mov ax, bx
+
+	;; Print a minus sign.
+	push ax  ; Save our number.
+	mov BYTE al, '-'
+	mov ah, 0x0e
+	int 0x10
+	pop ax  ; Restore our number.
+
+	.positive:
+
+	;; ax >= 0
 
 	;; Number of digits pushed onto the stack.
 	xor cx, cx
@@ -600,7 +633,8 @@ convert_char:
 	cmp al, 0x21
 	jl .return
 
-	;; movzx: https://stackoverflow.com/a/32836665/10402025
+	;; Use movzx to zero-extend the high bits of bx.
+	;; https://stackoverflow.com/a/32836665/10402025
 	movzx bx, al
 	mov BYTE al, [dvorak_keymap+bx-0x21]
 
