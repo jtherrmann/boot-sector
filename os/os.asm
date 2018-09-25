@@ -523,6 +523,7 @@ print_num:
 	ret
 
 ;;; TODO: operator lookup table
+;;; TODO: more operators: / and * at least
 apply_operator:
 ;;; Apply an operator to two operands.
 ;;; Pre: di contains the first operand, si the second operand, and dl the
