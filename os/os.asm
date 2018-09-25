@@ -351,6 +351,8 @@ invalid_command:
 ;;; in welcome message include limitations (e.g. max/min values for a number)
 calculator:
 ;;; Calculator.
+	push di  ; save
+
 	.loop:
 
 	mov di, calc_prompt
@@ -361,6 +363,7 @@ calculator:
 	call calc_eval
 	jmp .loop
 
+	pop di  ; restore
 	ret
 
 ;;; TODO: should not print result when too many operands
@@ -370,6 +373,14 @@ calculator:
 calc_eval:
 ;;; Evaluate a calculator expression.
 ;;; Pre: di points to the input string.
+
+	;; save
+	push ax
+	push bx
+	push cx
+	push di
+	push dx
+	push si
 
 	;; Note that the stack stores one-word (two-byte) items.
 	;; https://wiki.osdev.org/Real_Mode#The_Stack
@@ -474,6 +485,15 @@ calc_eval:
 	;; contained properly balanced operators and operands or because we
 	;; fixed the stack.
 	.return:
+
+	;; restore
+	pop si
+	pop dx
+	pop di
+	pop cx
+	pop bx
+	pop ax
+
 	ret
 
 println_num:
@@ -490,6 +510,13 @@ print_num:
 ;;; Pre: ax contains the number.
 ;;;
 ;;; Only accurately prints numbers in the range -32768 <= n < 32768.
+
+	;; save
+	push ax
+	push bx
+	push cx
+	push dx
+
 	cmp ax, 0
 	jge .positive
 
@@ -551,6 +578,12 @@ print_num:
 	cmp cx, 0
 	jg .printloop
 
+	;; restore
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+
 	ret
 
 ;;; TODO: operator lookup table
@@ -560,6 +593,7 @@ apply_operator:
 ;;; Pre: di contains the first operand, si the second operand, and dl the
 ;;; operator.
 ;;; Post: ax contains the result.
+	push di  ; save
 	jmp .start
 
 	.errorstr db "Invalid operand.",0
@@ -583,6 +617,7 @@ apply_operator:
 	call println
 
 	.return:
+	pop di  ; restore
 	ret
 
 add_op:
