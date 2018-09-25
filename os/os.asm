@@ -14,6 +14,9 @@
 
 ;;; TODO: check for correct usage of "operator" and "operand".
 
+;;; TODO: make sure procedures preserve ax when they call other procedures
+;;; that return in ax
+
 ;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
 ;;; use movsx for sign extension, if needed
 ;;; https://stackoverflow.com/a/32836665/10402025
