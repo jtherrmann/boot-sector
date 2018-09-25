@@ -496,6 +496,31 @@ calc_eval:
 
 	ret
 
+power10:
+;;; Return 10 to the nth power.
+;;; Pre: di contains n.
+;;; Post: ax contains 10 to the nth power.
+	push di  ; save
+
+	mov ax, 1
+	cmp di, 0
+	je .return
+
+	mov ax, 10
+
+	.loop:
+
+	cmp di, 1
+	je .return
+
+	imul ax, 10
+	dec di
+	jmp .loop
+
+	.return:
+	pop di  ; restore
+	ret
+
 println_num:
 ;;; Print a number preceded by a newline.
 ;;; Pre: ax contains the number.
