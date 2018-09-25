@@ -364,7 +364,6 @@ calculator:
 	pop di  ; restore
 	ret
 
-;;; TODO: should not print result when too many operands
 ;;; TODO: double check all sizes, and in helper funcs
 ;;; TODO: detect & handle numbers out of bounds (e.g. there are conditional
 ;;; overflow jump instructions; maybe in lecture notes?)
@@ -447,17 +446,17 @@ calc_eval:
 
 	;; Done reading the input string (exit the loop).
 
-	;; Pop the final result and print it.
+	;; Pop the final result.
 	pop ax
 	sub bx, 2  ; Stack offset decreases by 2B.
-	call println_num
 
 	;; Error if number of operands remaining on the stack > 0 (stack offset
 	;; > 0B).
 	cmp bx, 0
 	jg .toomany
 
-	;; The stack offset was 0B as expected.
+	;; The stack offset was 0B as expected, so print the final result.
+	call println_num
 	jmp .return
 
 	;; Encountered an operator with too few operands. Fix the stack and
