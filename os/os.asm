@@ -4,6 +4,8 @@
 ;;; TODO: clean up, document; search for TODO, FIXME in file; also search for other
 ;;; stuff to be addressed/cleaned up that's not marked with TODO or FIXME
 
+;;; TODO: format docstrings like Args and Returns rather than pre/post
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
