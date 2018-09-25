@@ -6,6 +6,12 @@
 
 ;;; TODO: format docstrings like Args and Returns rather than pre/post
 
+;;; TODO: rename REPL to shell; organize funcs into general internal utilities,
+;;; single-procedure user commands, and multi-procedure user commands (or call
+;;; them applications), such as calc (the main REPL plus all the helper funcs);
+;;; the shell is just another application (that gets executed at startup); move
+;;; REPL section into a shell procedure and execute it at startup
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
