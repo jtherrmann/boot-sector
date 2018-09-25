@@ -26,6 +26,8 @@
 
 ;;; TODO: convert all mov <reg>, 0 to xor <reg>, <reg>? what's the difference?
 
+;;; TODO: comment all procedures thoroughly
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
@@ -451,14 +453,10 @@ calc_eval:
 
 	;; Done reading the input string (exit the loop).
 
-	;; Pop the final result.
+	;; Pop the final result and print it.
 	pop ax
 	sub bx, 2  ; Stack offset decreases by 2B.
-
-	;; Print the final result.
-	push bx  ; Save stack offset.
 	call println_num
-	pop bx  ; Restore stack offset.
 
 	;; Error if number of operands remaining on the stack > 0 (stack offset
 	;; > 0B).
@@ -671,13 +669,11 @@ getstr:
 	je .return
 
 	cmp BYTE [dvorak], 0
-	je .skipdvorak
+	je .skipconvert
 
-	push bx
 	call convert_char
-	pop bx
 
-	.skipdvorak:
+	.skipconvert:
 
 	;; add the char to the input array
 	;; TODO: document:
@@ -743,9 +739,7 @@ execute_command:
 
 	;; Compare the current command string with the input string.
 	mov WORD si, [bx]
-	push bx
 	call compare_strings
-	pop bx
 
 	;; Loop if the strings are not equal.
 	cmp ax, 0
