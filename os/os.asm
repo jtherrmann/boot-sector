@@ -14,12 +14,6 @@
 
 ;;; TODO: check for correct usage of "operator" and "operand".
 
-;;; TODO: treating ALL registers as protected (must be pushed/popped at
-;;; start/end of each procedure) might make things a lot easier
-;;; review every function and do this; then search for push/pop throughout code
-;;; and remove unnecessary ones
-;;; make sure that all functions only have one ret
-
 ;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
 ;;; use movsx for sign extension, if needed
 ;;; https://stackoverflow.com/a/32836665/10402025
