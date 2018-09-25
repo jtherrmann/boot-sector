@@ -24,6 +24,8 @@
 ;;; use movsx for sign extension, if needed
 ;;; https://stackoverflow.com/a/32836665/10402025
 
+;;; TODO: convert all mov <reg>, 0 to xor <reg>, <reg>? what's the difference?
+
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
@@ -650,6 +652,10 @@ getstr:
 ;;; Pre: di points to an array.
 ;;; Post: di points to the same array, which now contains the string.
 
+	;; save
+	push ax
+	push bx
+
 	;; TODO: add support for backspace; and ideally support for C-h
 	;; (translate to backspace) and C-m (translate to carriage ret)
 
@@ -688,13 +694,21 @@ getstr:
 	jmp .loop
 
 	.return:
+
+	;; Append the null-terminator.
 	mov BYTE [di+bx], 0
+
+	;; restore
+	pop bx
+	pop ax
+
 	ret
 
 convert_char:
 ;;; Convert a character from QWERTY to Dvorak.
 ;;; Pre: al contains the character as it was entered with QWERTY.
 ;;; Post: al contains the corresponding Dvorak character.
+	push bx  ; save
 
 	;; chars < 0x21 don't need conversion
 	cmp al, 0x21
@@ -706,11 +720,17 @@ convert_char:
 	mov BYTE al, [dvorak_keymap+bx-0x21]
 
 	.return:
+	pop bx  ; restore
 	ret
 
 execute_command:
 ;;; Call a command given an input string.
 ;;; Pre: di points to the input string.
+
+	;; save
+	push bx
+	push si
+
 	mov bx, command_table
 	jmp .test
 
@@ -735,14 +755,20 @@ execute_command:
 	;; follows the command string in the table.
 	add bx, 2
 	call [bx]
+
+	;; restore
+	pop si
+	pop bx
+
 	ret
 
 compare_strings:
 ;;; Compare two strings.
 ;;; Pre: di and si contain pointers to the strings.
 ;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
-	mov bx, 0
+	push bx  ; save
 
+	mov bx, 0
 	.loop:
 
 	mov BYTE al, [si+bx]
@@ -757,10 +783,13 @@ compare_strings:
 
 	.true:
 	mov ax, 1
-	ret
+	jmp .return
 
 	.false:
 	mov ax, 0
+
+	.return:
+	pop bx  ; restore
 	ret
 
 print:
