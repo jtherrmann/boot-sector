@@ -394,6 +394,10 @@ calc_eval:
 
 	.loop:
 
+	;; Jump to the end of the loop if the current input char is a space.
+	cmp BYTE [di], ' '
+	je .increment
+
 	;; Check if the current input char represents a number 0-9.
 	;; If not, treat the char as an operator.
 	cmp BYTE [di], 0x30
@@ -410,7 +414,7 @@ calc_eval:
 	sub cx, 0x30
 	push cx
 	add bx, 2  ; Stack offset increases by 2B.
-	jmp .inc
+	jmp .increment
 
 	.operator:
 	;; Treat the current input char as an operator.
@@ -436,7 +440,7 @@ calc_eval:
 	add bx, 2  ; Stack offset increases by 2B.
 
 	;; Advance to the next input char.
-	.inc:
+	.increment:
 	inc di
 
 	;; Check the input string for the null-terminator.
