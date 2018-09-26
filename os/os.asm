@@ -148,15 +148,6 @@ os_start:
 ;;; REPL
 ;;; ===========================================================================
 
-	;; TODO: temp
-	jmp .skip
-	.num db "2010+"
-	.skip:
-
-	mov di, .num
-	call parse_num
-	call println_num
-
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -406,26 +397,29 @@ calc_eval:
 
 	.loop:
 
-	;; Jump to the end of the loop if the current input char is a space.
+	;; Jump to the bottom of the loop if the current input char is a space.
 	cmp BYTE [di], ' '
 	je .increment
 
-	;; Check if the current input char represents a number 0-9.
-	;; If not, treat the char as an operator.
+	;; Check if the current input char represents a digit 0-9. If not,
+	;; treat the char as an operator.
 	cmp BYTE [di], 0x30
 	jl .operator
 	cmp BYTE [di], 0x39
 	jg .operator
 
-	;; Convert the number from char to int and push it, then jump to the
-	;; end of the loop.
-	;; 
-	;; Use movzx to zero-extend the high bits of cx.
-	;; https://stackoverflow.com/a/32836665/10402025
-	movzx WORD cx, [di]
-	sub cx, 0x30
-	push cx
+	;; We've encountered a char representing the first digit of an integer.
+
+	;; Parse the integer and push its value. Note that parse_num also
+	;; returns (in cx) the number of digits in the integer.
+	call parse_num
+	push ax
 	add bx, 2  ; Stack offset increases by 2B.
+
+	;; Advance the input string pointer to the last digit of the integer
+	;; and then jump to the bottom of the loop.
+	add di, cx  ; Increment the string pointer by the number of digits.
+	dec di  ; Go back to the last digit.
 	jmp .increment
 
 	.operator:
@@ -507,86 +501,90 @@ calc_eval:
 
 parse_num:
 ;;; Get an integer from its string representation.
-;;; Pre: di points to the string.
-;;; Post: ax contains the integer and di points to 1B past the end of the
-;;; string.
-
-	;; TODO: better comments
+;;; 
+;;; Pre: di points to a string that begins with a char in the range 0x30-0x39
+;;; and terminates on any char outside of that range (e.g. whitespace or an
+;;; arithmetic operator).
+;;; 
+;;; Post: ax contains the integer and cx its number of digits.
 
 	;; save
 	push bx
-	push cx
+	push di
 	push dx
 	push si
 
-	;; current digit (char)
 	mov bx, di
 
-	.loop:
+	;; Advance to the end of the string by finding the first char that does
+	;; not represent a digit 0-9.
+	.loop_find_end:
 
-	;; next digit (char)
+	;; Advance to the next char.
 	inc bx
 
-	;; exit if char not 0-9
+	;; Exit the loop if the char does not represent a digit 0-9.
 	cmp BYTE [bx], 0x30
 	jl .exit
 	cmp BYTE [bx], 0x39
 	jg .exit
 
-	jmp .loop
+	jmp .loop_find_end
 
 	.exit:
 
-	;; the number
+	;; Now go back through the string, adding up the values of the digits
+	;; until we have our integer:
+
+	;; Running total.
 	xor si, si
 
-	;; digit count
+	;; Current place in the number, starting at 0.
+	;; 10 raised to the current place gives us the place value.
 	xor cx, cx
 
-	;; 1B before start of number string
+	;; Points to 1B before the start of our string (so we know where to
+	;; stop).
 	dec di
-
-	push bx  ; save
 
 	jmp .test
 
-	.loop2:
+	.loop_add_digits:
 
-	push di  ; save
-	mov di, cx  ; digit count
-	call power10  ; get 10 raised to digit count
-	pop di  ; restore
-
-	;; convert current digit from char to int
+	;; Convert the current digit from char to int.
 	movzx dx, [bx]
 	sub dx, 0x30
 
-	;; mult it by 10 raised to digit count
-	imul dx, ax
+	;; Calculate the current place value by finding 10 raised to the
+	;; current place.
+	push di  ; save string terminator
+	mov di, cx  ; current place
+	call power10
+	pop di  ; restore string terminator
 
-	;; add the result to our number
+	;; Multiply the current digit by the place value and add the result to
+	;; our running total.
+	imul dx, ax
 	add si, dx
 
-	inc cx  ; digit count
+	;; Increment the current place.
+	inc cx
 
 	.test:
 
-	;; go back 1 digit (char)
+	;; Move back one char and continue the loop if we haven't reached the
+	;; pointer to 1B before the start of our string.
 	dec bx
-
-	;; loop if current index > 1B before start of number string
 	cmp bx, di
-	jg .loop2
+	jg .loop_add_digits
 
-	pop bx  ; restore
-	mov di, bx  ; post-cond
-
-	mov ax, si  ; our number
+	;; The final value of our integer.
+	mov ax, si
 
 	;; restore
 	pop si
 	pop dx
-	pop cx
+	pop di
 	pop bx
 
 	ret
