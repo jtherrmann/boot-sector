@@ -148,6 +148,15 @@ os_start:
 ;;; REPL
 ;;; ===========================================================================
 
+	;; TODO: temp
+	jmp .skip
+	.num db "2010+"
+	.skip:
+
+	mov di, .num
+	call parse_num
+	call println_num
+
 	mov di, repl_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
@@ -495,6 +504,94 @@ calc_eval:
 	pop ax
 
 	ret
+
+parse_num:
+;;; Get an integer from its string representation.
+;;; Pre: di points to the string.
+;;; Post: ax contains the integer and di points to 1B past the end of the
+;;; string.
+
+	;; TODO: better comments
+
+	;; save
+	push bx
+	push cx
+	push dx
+	push si
+
+	;; current digit (char)
+	mov bx, di
+
+	.loop:
+
+	;; next digit (char)
+	inc bx
+
+	;; exit if char not 0-9
+	cmp BYTE [bx], 0x30
+	jl .exit
+	cmp BYTE [bx], 0x39
+	jg .exit
+
+	jmp .loop
+
+	.exit:
+
+	;; the number
+	xor si, si
+
+	;; digit count
+	xor cx, cx
+
+	;; 1B before start of number string
+	dec di
+
+	push bx  ; save
+
+	jmp .test
+
+	.loop2:
+
+	push di  ; save
+	mov di, cx  ; digit count
+	call power10  ; get 10 raised to digit count
+	pop di  ; restore
+
+	;; convert current digit from char to int
+	movzx dx, [bx]
+	sub dx, 0x30
+
+	;; mult it by 10 raised to digit count
+	imul dx, ax
+
+	;; add the result to our number
+	add si, dx
+
+	inc cx  ; digit count
+
+	.test:
+
+	;; go back 1 digit (char)
+	dec bx
+
+	;; loop if current index > 1B before start of number string
+	cmp bx, di
+	jg .loop2
+
+	pop bx  ; restore
+	mov di, bx  ; post-cond
+
+	mov ax, si  ; our number
+
+	;; restore
+	pop si
+	pop dx
+	pop cx
+	pop bx
+
+	ret
+	
+
 
 power10:
 ;;; Return 10 to the nth power.
