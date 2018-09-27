@@ -782,6 +782,14 @@ sub_op:
 	sub ax, si
 	ret
 
+mul_op:
+;;; Multiplication operator.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di * si.
+	mov ax, di
+	imul ax, si
+	ret
+
 ;;; ---------------------------------------------------------------------------
 ;;; Applications (end)
 ;;; ---------------------------------------------------------------------------
@@ -1006,11 +1014,12 @@ dvorak_keymap:
 
 ;;; Calculator data:
 
-	operator_chars db "+-",0
+	operator_chars db "+-*",0
 
 operator_table:	
 	dw add_op
 	dw sub_op
+	dw mul_op
 
 ;;; Shell data:
 
