@@ -820,6 +820,12 @@ div_op:
 	pop dx  ; restore
 	ret
 
+pow_op:
+;;; Power operator.
+;;; Pre: di contains the first operand and si the second operand.
+	call power
+	ret
+
 mod_op:	
 ;;; Modulo operator.
 	push dx  ; save
@@ -1060,7 +1066,7 @@ dvorak_keymap:
 
 ;;; Calculator data:
 
-	operator_chars db "+-*/%",0
+	operator_chars db "+-*/%^",0
 
 operator_table:	
 	dw add_op
@@ -1068,6 +1074,7 @@ operator_table:
 	dw mul_op
 	dw div_op
 	dw mod_op
+	dw pow_op
 
 ;;; Shell data:
 
