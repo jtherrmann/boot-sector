@@ -790,6 +790,13 @@ mul_op:
 	imul ax, si
 	ret
 
+;;; TODO: make div and mod work with negative operand(s); hopefully there's
+;;; a nasm-builtin solution
+;;; TODO: power ^ operator (convert power10 procedure to power_op and then use
+;;; power_op where power10 was used; or better yet, have a power func that can be called
+;;; directly where power10 was called, plus a power_op func that just calls the
+;;; power func, for the sake of consistency)
+
 div_op:
 ;;; Division operator.
 ;;; Pre: di contains the first operand and si the second operand.
@@ -802,6 +809,22 @@ div_op:
 	xor dx, dx
 	mov ax, di
 	div si
+
+	pop dx  ; restore
+	ret
+
+mod_op:	
+;;; Modulo operator.
+	push dx  ; save
+
+	;; div divides dx:ax by the operand. ax stores the quotient and dx
+	;; stores the remainder.
+	;; source: https://stackoverflow.com/a/8022107/10402025
+
+	xor dx, dx
+	mov ax, di
+	div si
+	mov ax, dx
 
 	pop dx  ; restore
 	ret
@@ -1030,13 +1053,14 @@ dvorak_keymap:
 
 ;;; Calculator data:
 
-	operator_chars db "+-*/",0
+	operator_chars db "+-*/%",0
 
 operator_table:	
 	dw add_op
 	dw sub_op
 	dw mul_op
 	dw div_op
+	dw mod_op
 
 ;;; Shell data:
 
