@@ -394,6 +394,7 @@ calc_eval:
 
 	.toofewstr db "Too few operands.",0
 	.toomanystr db "Too many operands.",0
+	.invalidoperatorstr db "Invalid operator.",0
 
 	.loop:
 
@@ -430,16 +431,29 @@ calc_eval:
 	cmp bx, 4
 	jl .toofew
 
-	mov BYTE dl, [di]  ; operator
+	;; Convert the operator char to an index into the operator table.
+	mov BYTE dl, [di]  ; operator char
+	call operator_index
+
+	;; Exit the loop if the char does not represent an operator.
+	cmp ax, -1
+	je .invalid_operator
 
 	pop si  ; second operand
 	pop cx  ; first operand
 	sub bx, 4  ; Stack offset decreases by 4B.
 
+	push bx  ; Save stack offset.
 	push di  ; Save input string pointer.
-	mov di, cx
-	call apply_operator
+
+	mov bx, ax  ; operator table index
+	mov di, cx  ; first operand
+
+	;; Call the operator procedure.
+	call [operator_table+bx]
+
 	pop di  ; Restore input string pointer.
+	pop bx	; Restore stack offset.
 
 	;; Push the result.
 	push ax
@@ -483,6 +497,15 @@ calc_eval:
 	add sp, bx  ; Add the stack offset to the stack pointer.
 	mov di, .toomanystr
 	call println
+	jmp .return
+
+	;; Encountered an invalid operator char. Fix the stack and notify the
+	;; user.
+	.invalid_operator:
+	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov di, .invalidoperatorstr
+	call println
+	jmp .return
 
 	;; The stack offset is back to 0B, either because the expression
 	;; contained properly balanced operators and operands or because we
@@ -497,6 +520,45 @@ calc_eval:
 	pop bx
 	pop ax
 
+	ret
+
+operator_index:
+;;; Convert an operator char to an index into the operator procedure array.
+;;; Pre: dl contains the operator char.
+;;; Post: ax contains the index, or -1 if the operator char is invalid.
+	push bx  ; save
+
+	mov bx, operator_chars	; string of valid operator chars
+	xor ax, ax  ; the index
+
+	.loop:
+
+	;; Exit the loop if we've found the given operator char in the string
+	;; of valid operator chars.
+	cmp BYTE dl, [bx]
+	je .shift
+
+	;; Exit the loop if we've reached the end of the string of valid
+	;; operator chars.
+	cmp BYTE [bx], 0
+	je .invalid
+
+	inc bx  ; position in string of valid operator chars
+	inc ax	; the index
+	jmp .loop
+
+	;; Signal that the given operator char is invalid by returning -1.
+	.invalid:
+	mov ax, -1
+	jmp .return
+
+	;; Shift the index left because the operator procedure array contains
+	;; 2B pointers.
+	.shift:
+	shl ax, 1
+
+	.return:
+	pop bx  ; restore
 	ret
 
 parse_num:
@@ -588,8 +650,6 @@ parse_num:
 	pop bx
 
 	ret
-	
-
 
 power10:
 ;;; Return 10 to the nth power.
@@ -704,40 +764,6 @@ print_num:
 	pop bx
 	pop ax
 
-	ret
-
-;;; TODO: operator lookup table
-;;; TODO: more operators: / and * at least
-apply_operator:
-;;; Apply an operator to two operands.
-;;; Pre: di contains the first operand, si the second operand, and dl the
-;;; operator.
-;;; Post: ax contains the result.
-	push di  ; save
-	jmp .start
-
-	.errorstr db "Invalid operand.",0
-
-	.start:
-
-	cmp BYTE dl, '+'
-	jne .skipadd
-	call add_op
-	jmp .return
-	.skipadd:
-
-	cmp BYTE dl, '-'
-	jne .error
-	call sub_op
-	jmp .return
-
-	;; TODO: why does it crash here?
-	.error:
-	mov di, .errorstr
-	call println
-
-	.return:
-	pop di  ; restore
 	ret
 
 add_op:
@@ -966,6 +992,8 @@ print_newline:
 ;;; Data
 ;;; ===========================================================================
 
+	;; TODO: better headings
+
 	input times 256 db 0
 	repl_prompt times 32 db 0
 	calc_prompt db "calc> ",0
@@ -975,6 +1003,16 @@ print_newline:
 dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
+
+;;; Calculator data:
+
+	operator_chars db "+-",0
+
+operator_table:	
+	dw add_op
+	dw sub_op
+
+;;; Shell data:
 
 	;; TODO: double-check that this value is correct
 	;; The help command prints the first help_list_len commands from the
