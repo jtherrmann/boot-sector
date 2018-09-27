@@ -617,11 +617,16 @@ parse_num:
 	movzx dx, [bx]
 	sub dx, 0x30
 
+	push di  ; save string terminator
+	push si	 ; save running total
+
 	;; Calculate the current place value by finding 10 raised to the
 	;; current place.
-	push di  ; save string terminator
-	mov di, cx  ; current place
-	call power10
+	mov di, 10
+	mov si, cx  ; current place
+	call power
+
+	pop si  ; restore running total
 	pop di  ; restore string terminator
 
 	;; Multiply the current digit by the place value and add the result to
@@ -651,29 +656,31 @@ parse_num:
 
 	ret
 
-power10:
-;;; Return 10 to the nth power.
-;;; Pre: di contains n.
-;;; Post: ax contains 10 to the nth power.
-	push di  ; save
+power:
+;;; Raise the first operand to the power of the second operand.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains the result.
+	push si  ; save
 
+	;; Return 1 if the exponent is 0.
 	mov ax, 1
-	cmp di, 0
+	cmp si, 0
 	je .return
 
-	mov ax, 10
+	mov ax, di  ; running total
 
 	.loop:
 
-	cmp di, 1
+	;; Exit the loop if the exponent is 1.
+	cmp si, 1
 	je .return
 
-	imul ax, 10
-	dec di
+	imul ax, di  ; Multiply running total by first operand.
+	dec si	     ; Decrement the exponent.
 	jmp .loop
 
 	.return:
-	pop di  ; restore
+	pop si  ; restore
 	ret
 
 println_num:
