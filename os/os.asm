@@ -797,49 +797,49 @@ mul_op:
 	imul ax, si
 	ret
 
-;;; TODO: make div and mod work with negative operand(s); hopefully there's
-;;; a nasm-builtin solution
-;;; TODO: power ^ operator (convert power10 procedure to power_op and then use
-;;; power_op where power10 was used; or better yet, have a power func that can be called
-;;; directly where power10 was called, plus a power_op func that just calls the
-;;; power func, for the sake of consistency)
-
 div_op:
 ;;; Division operator.
 ;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di / si (integer division).
 	push dx  ; save
+	call divide
+	pop dx  ; restore
+	ret
+
+mod_op:	
+;;; Modulo operator.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di % si.
+	push dx  ; save
+	call divide
+	mov ax, dx  ; remainder
+	pop dx  ; restore
+	ret
+
+divide:
+;;; Divide the first operand by the second operand.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains the quotient and dx the remainder.
 
 	;; div divides dx:ax by the operand. ax stores the quotient and dx
 	;; stores the remainder.
 	;; source: https://stackoverflow.com/a/8022107/10402025
 
-	xor dx, dx
-	mov ax, di
-	div si
+	;; idiv divides signed numbers in a similar manner. cwd sign-extends ax
+	;; into dx:ax.
+	;; source: https://stackoverflow.com/a/9073207/10402025
 
-	pop dx  ; restore
+	mov ax, di  ; first operand
+	cwd
+	idiv si  ; second operand
+
 	ret
 
 pow_op:
 ;;; Power operator.
 ;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains di raised to the power of si.
 	call power
-	ret
-
-mod_op:	
-;;; Modulo operator.
-	push dx  ; save
-
-	;; div divides dx:ax by the operand. ax stores the quotient and dx
-	;; stores the remainder.
-	;; source: https://stackoverflow.com/a/8022107/10402025
-
-	xor dx, dx
-	mov ax, di
-	div si
-	mov ax, dx
-
-	pop dx  ; restore
 	ret
 
 ;;; ---------------------------------------------------------------------------
