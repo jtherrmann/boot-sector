@@ -171,7 +171,7 @@ shell:
 	mov di, shell_prompt
 	call println
 
-	mov di, input
+	mov di, input_buffer
 	call getstr
 
 	;; Check for empty input.
@@ -288,19 +288,19 @@ keymap:
 
 	.start:
 
-	cmp BYTE [dvorak], 0
+	cmp BYTE [dvorak_mode], 0
 	je .dvorak
 
 	mov di, .qwertystr
 	call println
-	mov BYTE [dvorak], 0
+	mov BYTE [dvorak_mode], 0
 	jmp .return
 
 	.dvorak:
 
 	mov di, .dvorakstr
 	call println
-	mov BYTE [dvorak], 1
+	mov BYTE [dvorak_mode], 1
 
 	.return:
 	pop di  ; restore
@@ -324,7 +324,7 @@ me:
 	mov di, .str
 	call println
 
-	mov di, input
+	mov di, input_buffer
 	call getstr
 
 	mov si, shell_prompt
@@ -444,7 +444,7 @@ command_table:
 
 	;; Allows execute_command to always call invalid_command if the input
 	;; string does not match any of the above command strings.
-	dw input
+	dw input_buffer
 	dw invalid_command
 
 
@@ -472,7 +472,7 @@ calculator:
 	mov di, calc_prompt
 	call println
 
-	mov di, input
+	mov di, input_buffer
 	call getstr
 
 	;; Check for empty input.
@@ -755,6 +755,22 @@ pow_op:
 	ret
 
 
+;;; ---------------------------------------------------------------------------
+;;; Calculator data
+;;; ---------------------------------------------------------------------------
+
+	calc_prompt db "calc> ",0
+
+	operator_chars db "+-*/%^",0
+operator_table:	
+	dw add_op
+	dw sub_op
+	dw mul_op
+	dw div_op
+	dw mod_op
+	dw pow_op
+
+
 ;;; ===========================================================================
 ;;; System utilities
 ;;; ===========================================================================
@@ -800,7 +816,7 @@ getstr:
 	cmp al, 0x7e
 	jg .loop
 
-	cmp BYTE [dvorak], 0
+	cmp BYTE [dvorak_mode], 0
 	je .skipconvert
 
 	call convert_char
@@ -910,6 +926,10 @@ convert_char:
 	.return:
 	pop bx  ; restore
 	ret
+
+dvorak_keymap:
+	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
+	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
 
 
 ;;; ---------------------------------------------------------------------------
@@ -1243,32 +1263,10 @@ power:
 
 
 ;;; ===========================================================================
-;;; Data
+;;; Global data
 ;;; ===========================================================================
 
-;;; TODO: move data to other sections?
-
-	;; TODO: better headings
-
-	input times 256 db 0
-	calc_prompt db "calc> ",0
-
-	dvorak db 1
-
-dvorak_keymap:
-	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
-	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
-
-;;; Calculator data:
-
-	operator_chars db "+-*/%^",0
-
-operator_table:	
-	dw add_op
-	dw sub_op
-	dw mul_op
-	dw div_op
-	dw mod_op
-	dw pow_op
+	input_buffer times 256 db 0
+	dvorak_mode db 1
 
 os_end:	
