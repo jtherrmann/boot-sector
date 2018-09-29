@@ -15,6 +15,9 @@
 ;;; TODO: could have a 'help <topic>' format. E.g. in calc 'help operator overflow'
 ;;; would give a more detailed description of the error.
 
+;;; TODO: go back to uses of 'jo ...' and don't use it where unnecessary (like
+;;; could the overflow flag ever be set by an idiv? at least how I use it?)
+
 ;;; TODO: check for correct usage of "operator" and "operand".
 
 ;;; TODO: make sure procedures preserve ax when they call other procedures
