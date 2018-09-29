@@ -882,8 +882,10 @@ pow_op:
 ;;; Internal procedures
 ;;; ===========================================================================
 
-;;; perhaps allow max input len to be a parameter; use it to prevent input buffer overflow
+;;; TODO: perhaps allow max input len to be a parameter; use it to prevent input buffer overflow
 ;;; as well as limit max len of custom repl prompt
+;;; TODO: convert handling special chars to some sort of lookup table so adding
+;;; special chars is easy; add l/r arrow keys
 getstr:
 ;;; Read a string from keyboard input.
 ;;; Pre: di points to an array.
@@ -910,6 +912,12 @@ getstr:
 	;; check for carriage ret (enter)
 	cmp al, 0x0d
 	je .return
+
+	;; Skip the remaining unprintable chars.
+	cmp al, 0x20
+	jl .loop
+	cmp al, 0x7e
+	jg .loop
 
 	cmp BYTE [dvorak], 0
 	je .skipconvert
