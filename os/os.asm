@@ -882,6 +882,8 @@ pow_op:
 ;;; Internal procedures
 ;;; ===========================================================================
 
+;;; perhaps allow max input len to be a parameter; use it to prevent input buffer overflow
+;;; as well as limit max len of custom repl prompt
 getstr:
 ;;; Read a string from keyboard input.
 ;;; Pre: di points to an array.
