@@ -6,6 +6,9 @@
 
 ;;; TODO: format docstrings like Args and Returns rather than pre/post
 
+;;; TODO: better headings; maybe just exactly like RST:
+;;; http://docutils.sourceforge.net/docs/user/rst/quickstart.html
+
 ;;; TODO: rename REPL to shell; organize funcs into general internal utilities,
 ;;; single-procedure user commands, and multi-procedure user commands (or call
 ;;; them applications), such as calc (the main REPL plus all the helper funcs);
@@ -71,6 +74,7 @@
 	;; also referenced from:
 	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
 	
+;;; TODO: remove this heading?
 ;;; ===========================================================================
 ;;; Boot loader
 ;;; ===========================================================================
@@ -86,6 +90,7 @@
 	;;   - https://stackoverflow.com/q/52461308/10402025
 	;;   - https://stackoverflow.com/q/52463695/10402025
 
+	;; TODO: comment section/vstart
 	section boot, vstart=0x0000
 
 	os_load_start equ 0x0060
@@ -137,11 +142,7 @@
 	db 0x55
 	db 0xaa
 
-;;; ---------------------------------------------------------------------------
-;;; Boot loader (end)
-;;; ---------------------------------------------------------------------------
-
-
+	;; TODO: comment section/vstart
 	section os, vstart=0x0000
 os_start:	
 
@@ -152,15 +153,22 @@ os_start:
 	mov ax, os_load_start
 	mov ds, ax
 
+	call shell
+
+
 ;;; ===========================================================================
-;;; REPL
+;;; Shell
 ;;; ===========================================================================
 
-	mov di, repl_prompt
+shell:	
+;;; TODO
+	mov di, shell_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
-repl:
-	mov di, repl_prompt
+
+	.loop:
+
+	mov di, shell_prompt
 	call println
 
 	mov di, input
@@ -168,15 +176,53 @@ repl:
 
 	;; Check for empty input.
 	cmp BYTE [di], 0
-	je repl
+	je .loop
 
 	call execute_command
-	jmp repl
+	jmp .loop
 
+	ret
 
-;;; ===========================================================================
+execute_command:
+;;; Call a command given an input string.
+;;; Pre: di points to the input string.
+
+	;; save
+	push bx
+	push si
+
+	mov bx, command_table
+	jmp .test
+
+	.loop:
+
+	;; Advance to the next command string.
+	add bx, 4
+
+	.test:
+
+	;; Compare the current command string with the input string.
+	mov WORD si, [bx]
+	call compare_strings
+
+	;; Loop if the strings are not equal.
+	cmp ax, 0
+	je .loop
+
+	;; The command and input strings are equal, so call the procedure that
+	;; follows the command string in the table.
+	add bx, 2
+	call [bx]
+
+	;; restore
+	pop si
+	pop bx
+
+	ret
+
+;;; ---------------------------------------------------------------------------
 ;;; Shell commands
-;;; ===========================================================================
+;;; ---------------------------------------------------------------------------
 
 ;;; TODO: prefix names w/ something like cmd_? (or _cmd suffix)
 
@@ -281,7 +327,7 @@ me:
 	mov di, input
 	call getstr
 
-	mov si, repl_prompt
+	mov si, shell_prompt
 	mov bx, 0
 	jmp .test
 
@@ -346,23 +392,18 @@ invalid_command:
 	pop di  ; restore
 	ret
 
-;;; ---------------------------------------------------------------------------
-;;; Shell commands (end)
-;;; ---------------------------------------------------------------------------
-
-;;; TODO: better headings; maybe just exactly like RST:
-;;; http://docutils.sourceforge.net/docs/user/rst/quickstart.html
 
 ;;; ===========================================================================
 ;;; Applications
 ;;; ===========================================================================
 
-;;; TODO: Calculator heading
-;;; TODO: diff name; vlc? (very lazy calculator; e.g. if no negatives, esp. if
-;;; no nums outside 0-9
+;;; ---------------------------------------------------------------------------
+;;; Calculator
+;;; ---------------------------------------------------------------------------
 
 ;;; TODO: method of exiting; welcome message w/ info about RPN/postfix
 ;;; in welcome message include limitations (e.g. max/min values for a number)
+
 calculator:
 ;;; Calculator.
 	push di  ; save
@@ -465,7 +506,7 @@ calc_eval:
 
 	;; Convert the operator char to an index into the operator table.
 	mov BYTE dl, [di]  ; operator char
-	call operator_index
+	call get_operator_index
 
 	;; Exit the loop if the char does not represent an operator.
 	cmp ax, -1
@@ -569,7 +610,7 @@ calc_eval:
 
 	ret
 
-operator_index:
+get_operator_index:
 ;;; Convert an operator char to an index into the operator procedure array.
 ;;; Pre: dl contains the operator char.
 ;;; Post: ax contains the index, or -1 if the operator char is invalid.
@@ -606,225 +647,6 @@ operator_index:
 
 	.return:
 	pop bx  ; restore
-	ret
-
-parse_num:
-;;; Get an integer from its string representation.
-;;; 
-;;; Pre: di points to a string that begins with a char in the range 0x30-0x39
-;;; and terminates on any char outside of that range (e.g. whitespace or an
-;;; arithmetic operator).
-;;; 
-;;; Post: ax contains the integer and cx its number of digits.
-
-	;; save
-	push bx
-	push di
-	push dx
-	push si
-
-	mov bx, di
-
-	;; Advance to the end of the string by finding the first char that does
-	;; not represent a digit 0-9.
-	.loop_find_end:
-
-	;; Advance to the next char.
-	inc bx
-
-	;; Exit the loop if the char does not represent a digit 0-9.
-	cmp BYTE [bx], 0x30
-	jl .exit
-	cmp BYTE [bx], 0x39
-	jg .exit
-
-	jmp .loop_find_end
-
-	.exit:
-
-	;; Now go back through the string, adding up the values of the digits
-	;; until we have our integer:
-
-	;; Running total.
-	xor si, si
-
-	;; Current place in the number, starting at 0.
-	;; 10 raised to the current place gives us the place value.
-	xor cx, cx
-
-	;; Points to 1B before the start of our string (so we know where to
-	;; stop).
-	dec di
-
-	jmp .test
-
-	.loop_add_digits:
-
-	;; Convert the current digit from char to int.
-	movzx dx, [bx]
-	sub dx, 0x30
-
-	push di  ; save string terminator
-	push si	 ; save running total
-
-	;; Calculate the current place value by finding 10 raised to the
-	;; current place.
-	mov di, 10
-	mov si, cx  ; current place
-	call power
-
-	pop si  ; restore running total
-	pop di  ; restore string terminator
-
-	jo .return
-
-	;; Multiply the current digit by the place value and add the result to
-	;; our running total.
-	imul dx, ax
-	jo .return
-	add si, dx
-	jo .return
-
-	;; Increment the current place.
-	inc cx
-
-	.test:
-
-	;; Move back one char and continue the loop if we haven't reached the
-	;; pointer to 1B before the start of our string.
-	dec bx
-	cmp bx, di
-	jg .loop_add_digits
-
-	;; The final value of our integer.
-	mov ax, si
-
-	.return:
-
-	;; restore
-	pop si
-	pop dx
-	pop di
-	pop bx
-
-	ret
-
-power:
-;;; Raise the first operand to the power of the second operand.
-;;; Pre: di contains the first operand and si the second operand.
-;;; Post: ax contains the result.
-	push si  ; save
-
-	;; Return 1 if the exponent is 0.
-	mov ax, 1
-	cmp si, 0
-	je .return
-
-	mov ax, di  ; running total
-
-	.loop:
-
-	;; Exit the loop if the exponent is 1.
-	cmp si, 1
-	je .return
-
-	imul ax, di  ; Multiply running total by first operand.
-	jo .return
-	dec si	     ; Decrement the exponent.
-	jmp .loop
-
-	.return:
-	pop si  ; restore
-	ret
-
-println_num:
-;;; Print a number preceded by a newline.
-;;; Pre: ax contains the number.
-;;;
-;;; Only accurately prints numbers in the range -32768 <= n < 32768.
-	call print_newline
-	call print_num
-	ret
-
-print_num:
-;;; Print a number.
-;;; Pre: ax contains the number.
-;;;
-;;; Only accurately prints numbers in the range -32768 <= n < 32768.
-
-	;; save
-	push ax
-	push bx
-	push cx
-	push dx
-
-	cmp ax, 0
-	jge .positive
-
-	;; ax < 0
-
-	;; Set ax to its absolute value.
-	xor bx, bx
-	sub bx, ax
-	mov ax, bx
-
-	;; Print a minus sign.
-	push ax  ; Save our number.
-	mov BYTE al, '-'
-	mov ah, 0x0e
-	int 0x10
-	pop ax  ; Restore our number.
-
-	.positive:
-
-	;; ax >= 0
-
-	;; Number of digits pushed onto the stack.
-	xor cx, cx
-
-	.parseloop:
-	
-	;; div divides dx:ax by the operand. ax stores the quotient and dx
-	;; stores the remainder.
-	;; source: https://stackoverflow.com/a/8022107/10402025
-
-	;; Divide our number (ax) by 10.
-	xor dx, dx
-	mov bx, 10
-	div bx
-
-	;; Convert the remainder from int to char and push it.
-	add dx, 0x30
-	push dx
-	inc cx  ; Number of digits pushed onto the stack.
-
-	;; Continue the loop if the quotient != 0.
-	cmp ax, 0
-	jne .parseloop
-
-	;; Done parsing the number. Now print it:
-
-	jmp .test
-	.printloop:
-
-	;; Pop a digit and print it.
-	pop dx
-	mov BYTE al, dl
-	mov ah, 0x0e
-	int 0x10
-
-	dec cx  ; Number of digits left on the stack.
-
-	.test:
-	cmp cx, 0
-	jg .printloop
-
-	;; restore
-	pop dx
-	pop cx
-	pop bx
-	pop ax
-
 	ret
 
 add_op:
@@ -870,25 +692,6 @@ mod_op:
 	pop dx  ; restore
 	ret
 
-divide:
-;;; Divide the first operand by the second operand.
-;;; Pre: di contains the first operand and si the second operand.
-;;; Post: ax contains the quotient and dx the remainder.
-
-	;; div divides dx:ax by the operand. ax stores the quotient and dx
-	;; stores the remainder.
-	;; source: https://stackoverflow.com/a/8022107/10402025
-
-	;; idiv divides signed numbers in a similar manner. cwd sign-extends ax
-	;; into dx:ax.
-	;; source: https://stackoverflow.com/a/9073207/10402025
-
-	mov ax, di  ; first operand
-	cwd
-	idiv si  ; second operand
-
-	ret
-
 pow_op:
 ;;; Power operator.
 ;;; Pre: di contains the first operand and si the second operand.
@@ -896,14 +699,14 @@ pow_op:
 	call power
 	ret
 
-;;; ---------------------------------------------------------------------------
-;;; Applications (end)
-;;; ---------------------------------------------------------------------------
-
 
 ;;; ===========================================================================
-;;; Internal procedures
+;;; System utilities
 ;;; ===========================================================================
+
+;;; ---------------------------------------------------------------------------
+;;; Input
+;;; ---------------------------------------------------------------------------
 
 ;;; TODO: perhaps allow max input len to be a parameter; use it to prevent input buffer overflow
 ;;; as well as limit max len of custom repl prompt
@@ -1053,71 +856,16 @@ convert_char:
 	pop bx  ; restore
 	ret
 
-execute_command:
-;;; Call a command given an input string.
-;;; Pre: di points to the input string.
 
-	;; save
-	push bx
-	push si
+;;; ---------------------------------------------------------------------------
+;;; Output
+;;; ---------------------------------------------------------------------------
 
-	mov bx, command_table
-	jmp .test
-
-	.loop:
-
-	;; Advance to the next command string.
-	add bx, 4
-
-	.test:
-
-	;; Compare the current command string with the input string.
-	mov WORD si, [bx]
-	call compare_strings
-
-	;; Loop if the strings are not equal.
-	cmp ax, 0
-	je .loop
-
-	;; The command and input strings are equal, so call the procedure that
-	;; follows the command string in the table.
-	add bx, 2
-	call [bx]
-
-	;; restore
-	pop si
-	pop bx
-
-	ret
-
-compare_strings:
-;;; Compare two strings.
-;;; Pre: di and si contain pointers to the strings.
-;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
-	push bx  ; save
-
-	mov bx, 0
-	.loop:
-
-	mov BYTE al, [si+bx]
-	cmp BYTE [di+bx], al
-	jne .false
-
-	cmp BYTE [di+bx], 0
-	je .true
-
-	inc bx
-	jmp .loop
-
-	.true:
-	mov ax, 1
-	jmp .return
-
-	.false:
-	mov ax, 0
-
-	.return:
-	pop bx  ; restore
+println:
+;;; Print a string on a new line.
+;;; Pre: di contains a pointer to the beginning of the string.
+	call print_newline
+	call print
 	ret
 
 print:
@@ -1150,11 +898,90 @@ print:
 	
 	ret
 
-println:
-;;; Print a string on a new line.
-;;; Pre: di contains a pointer to the beginning of the string.
+println_num:
+;;; Print a number preceded by a newline.
+;;; Pre: ax contains the number.
 	call print_newline
-	call print
+	call print_num
+	ret
+
+print_num:
+;;; Print a number.
+;;; Pre: ax contains the number.
+
+	;; save
+	push ax
+	push bx
+	push cx
+	push dx
+
+	cmp ax, 0
+	jge .positive
+
+	;; ax < 0
+
+	;; Set ax to its absolute value.
+	xor bx, bx
+	sub bx, ax
+	mov ax, bx
+
+	;; Print a minus sign.
+	push ax  ; Save our number.
+	mov BYTE al, '-'
+	mov ah, 0x0e
+	int 0x10
+	pop ax  ; Restore our number.
+
+	.positive:
+
+	;; ax >= 0
+
+	;; Number of digits pushed onto the stack.
+	xor cx, cx
+
+	.parseloop:
+	
+	;; div divides dx:ax by the operand. ax stores the quotient and dx
+	;; stores the remainder.
+	;; source: https://stackoverflow.com/a/8022107/10402025
+
+	;; Divide our number (ax) by 10.
+	xor dx, dx
+	mov bx, 10
+	div bx
+
+	;; Convert the remainder from int to char and push it.
+	add dx, 0x30
+	push dx
+	inc cx  ; Number of digits pushed onto the stack.
+
+	;; Continue the loop if the quotient != 0.
+	cmp ax, 0
+	jne .parseloop
+
+	;; Done parsing the number. Now print it:
+
+	jmp .test
+	.printloop:
+
+	;; Pop a digit and print it.
+	pop dx
+	mov BYTE al, dl
+	mov ah, 0x0e
+	int 0x10
+
+	dec cx  ; Number of digits left on the stack.
+
+	.test:
+	cmp cx, 0
+	jg .printloop
+
+	;; restore
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+
 	ret
 
 print_newline:
@@ -1171,19 +998,205 @@ print_newline:
 	pop ax  ; restore
 	ret
 
+
 ;;; ---------------------------------------------------------------------------
-;;; Internal procedures (end)
+;;; String operations
 ;;; ---------------------------------------------------------------------------
+
+compare_strings:
+;;; Compare two strings.
+;;; Pre: di and si contain pointers to the strings.
+;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
+	push bx  ; save
+
+	mov bx, 0
+	.loop:
+
+	mov BYTE al, [si+bx]
+	cmp BYTE [di+bx], al
+	jne .false
+
+	cmp BYTE [di+bx], 0
+	je .true
+
+	inc bx
+	jmp .loop
+
+	.true:
+	mov ax, 1
+	jmp .return
+
+	.false:
+	mov ax, 0
+
+	.return:
+	pop bx  ; restore
+	ret
+
+parse_num:
+;;; Get an integer from its string representation.
+;;; 
+;;; Pre: di points to a string that begins with a char in the range 0x30-0x39
+;;; and terminates on any char outside of that range (e.g. whitespace or an
+;;; arithmetic operator).
+;;; 
+;;; Post: ax contains the integer and cx its number of digits.
+
+	;; save
+	push bx
+	push di
+	push dx
+	push si
+
+	mov bx, di
+
+	;; Advance to the end of the string by finding the first char that does
+	;; not represent a digit 0-9.
+	.loop_find_end:
+
+	;; Advance to the next char.
+	inc bx
+
+	;; Exit the loop if the char does not represent a digit 0-9.
+	cmp BYTE [bx], 0x30
+	jl .exit
+	cmp BYTE [bx], 0x39
+	jg .exit
+
+	jmp .loop_find_end
+
+	.exit:
+
+	;; Now go back through the string, adding up the values of the digits
+	;; until we have our integer:
+
+	;; Running total.
+	xor si, si
+
+	;; Current place in the number, starting at 0.
+	;; 10 raised to the current place gives us the place value.
+	xor cx, cx
+
+	;; Points to 1B before the start of our string (so we know where to
+	;; stop).
+	dec di
+
+	jmp .test
+
+	.loop_add_digits:
+
+	;; Convert the current digit from char to int.
+	movzx dx, [bx]
+	sub dx, 0x30
+
+	push di  ; save string terminator
+	push si	 ; save running total
+
+	;; Calculate the current place value by finding 10 raised to the
+	;; current place.
+	mov di, 10
+	mov si, cx  ; current place
+	call power
+
+	pop si  ; restore running total
+	pop di  ; restore string terminator
+
+	jo .return
+
+	;; Multiply the current digit by the place value and add the result to
+	;; our running total.
+	imul dx, ax
+	jo .return
+	add si, dx
+	jo .return
+
+	;; Increment the current place.
+	inc cx
+
+	.test:
+
+	;; Move back one char and continue the loop if we haven't reached the
+	;; pointer to 1B before the start of our string.
+	dec bx
+	cmp bx, di
+	jg .loop_add_digits
+
+	;; The final value of our integer.
+	mov ax, si
+
+	.return:
+
+	;; restore
+	pop si
+	pop dx
+	pop di
+	pop bx
+
+	ret
+
+
+;;; ---------------------------------------------------------------------------
+;;; Arithmetic
+;;; ---------------------------------------------------------------------------
+
+divide:
+;;; Divide the first operand by the second operand.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains the quotient and dx the remainder.
+
+	;; div divides dx:ax by the operand. ax stores the quotient and dx
+	;; stores the remainder.
+	;; source: https://stackoverflow.com/a/8022107/10402025
+
+	;; idiv divides signed numbers in a similar manner. cwd sign-extends ax
+	;; into dx:ax.
+	;; source: https://stackoverflow.com/a/9073207/10402025
+
+	mov ax, di  ; first operand
+	cwd
+	idiv si  ; second operand
+
+	ret
+
+power:
+;;; Raise the first operand to the power of the second operand.
+;;; Pre: di contains the first operand and si the second operand.
+;;; Post: ax contains the result.
+	push si  ; save
+
+	;; Return 1 if the exponent is 0.
+	mov ax, 1
+	cmp si, 0
+	je .return
+
+	mov ax, di  ; running total
+
+	.loop:
+
+	;; Exit the loop if the exponent is 1.
+	cmp si, 1
+	je .return
+
+	imul ax, di  ; Multiply running total by first operand.
+	jo .return
+	dec si	     ; Decrement the exponent.
+	jmp .loop
+
+	.return:
+	pop si  ; restore
+	ret
 
 
 ;;; ===========================================================================
 ;;; Data
 ;;; ===========================================================================
 
+;;; TODO: move data to other sections?
+
 	;; TODO: better headings
 
 	input times 256 db 0
-	repl_prompt times 32 db 0
+	shell_prompt times 32 db 0
 	calc_prompt db "calc> ",0
 
 	dvorak db 1
