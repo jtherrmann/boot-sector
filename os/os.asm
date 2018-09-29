@@ -34,6 +34,8 @@
 ;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
 ;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
 ;;; the end of the line
+
+;;; TODO: ensure that str labels are always local (begin with .) in procedures
 	
 ;;; TODO: clean up
 ;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
@@ -360,6 +362,10 @@ calculator:
 ;;; Calculator.
 	push di  ; save
 
+	jmp .loop
+
+	.exit_str db "exit",0
+
 	.loop:
 
 	mov di, calc_prompt
@@ -367,8 +373,16 @@ calculator:
 
 	mov di, input
 	call getstr
+
+	mov si, .exit_str
+	call compare_strings
+	cmp ax, 0
+	jne .return
+
 	call calc_eval
 	jmp .loop
+
+	.return:
 
 	pop di  ; restore
 	ret
