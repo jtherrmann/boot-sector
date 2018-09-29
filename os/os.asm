@@ -931,6 +931,9 @@ getstr:
 
 	.backspace:
 
+	cmp bx, 0
+	je .loop
+
 	dec bx
 	mov BYTE [di+bx], 0
 	call cursor_backspace
