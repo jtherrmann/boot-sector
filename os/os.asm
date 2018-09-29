@@ -901,6 +901,10 @@ getstr:
 	mov ah, 0
 	int 0x16
 
+	;; check for backspace
+	cmp al, 0x08
+	je .backspace
+
 	;; check for carriage ret (enter)
 	cmp al, 0x0d
 	je .return
@@ -923,6 +927,17 @@ getstr:
 	mov ah, 0x0e
 	int 0x10
 
+	jmp .increment
+
+	.backspace:
+
+	dec bx
+	mov BYTE [di+bx], 0
+	call cursor_backspace
+	jmp .loop
+
+	.increment:
+	
 	inc bx
 	jmp .loop
 
@@ -932,6 +947,52 @@ getstr:
 	mov BYTE [di+bx], 0
 
 	;; restore
+	pop bx
+	pop ax
+
+	ret
+
+cursor_backspace:
+;;; Move the cursor back one column and print a null character.
+
+	;; save
+	push ax
+	push bx
+	push cx
+	push dx
+
+	;; source:
+	;; - https://wiki.osdev.org/Text_Mode_Cursor#Get_Cursor_Data
+	;; - https://wiki.osdev.org/Text_Mode_Cursor#Moving_the_Cursor
+
+	;; from source: "display page (usually, if not always 0)"
+	xor bh, bh
+
+	;; Get cursor data. Row and column are returned in dh and dl. (Values
+	;; are also returned in ch and cl, which is why this procedure must
+	;; preserve cx.)
+	mov ah, 0x03
+	int 0x10
+
+	;; Move the cursor back one column. Row and column are passed in dh and
+	;; dl.
+	dec dl
+	mov ah, 0x02
+	int 0x10
+
+	;; Print a null character. The cursor automatically moves forward one
+	;; column.
+	mov al, 0
+	mov ah, 0x0e
+	int 0x10
+
+	;; Move the cursor back one column.
+	mov ah, 0x02
+	int 0x10
+
+	;; restore
+	pop dx
+	pop cx
 	pop bx
 	pop ax
 
