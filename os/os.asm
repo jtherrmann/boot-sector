@@ -6,15 +6,6 @@
 
 ;;; TODO: format docstrings like Args and Returns rather than pre/post
 
-;;; TODO: better headings; maybe just exactly like RST:
-;;; http://docutils.sourceforge.net/docs/user/rst/quickstart.html
-
-;;; TODO: rename REPL to shell; organize funcs into general internal utilities,
-;;; single-procedure user commands, and multi-procedure user commands (or call
-;;; them applications), such as calc (the main REPL plus all the helper funcs);
-;;; the shell is just another application (that gets executed at startup); move
-;;; REPL section into a shell procedure and execute it at startup
-
 ;;; TODO: could have a 'help <topic>' format. E.g. in calc 'help operator overflow'
 ;;; would give a more detailed description of the error.
 
@@ -50,20 +41,7 @@
 ;;; test:
 ;;; qemu-system-x86_64 boot.bin
 
-;;; TODO:
-;;; start with an insert mode key procedure lookup table; chars such as
-;;; backspace and arrow keys are mapped to behaviors (delete back, move around)
-;;; and when getstr gets one of these chars it looks up the corresponding
-;;; procedure (hopefully just using char as index into procedure array) and
-;;; calls it (otherwise just prints the char); note: as long as left arrow key
-;;; corresponds to an ascii char then it could be implemented with a backspace
-;;; (w/o delete); next step after the insert mode key table would be a normal
-;;; mode key table for hjkl, etc.
-;;; 
-;;; https://wiki.osdev.org/Text_Mode_Cursor#Moving_the_Cursor int 0x10/ah=0x02
-;;; looks like you probably have to get row & col ("Get Cursor Data") then move
-;;; to e.g. the next col, same row (to move right) or prev col (to move left)
-;;; 
+;;; TODO: save this for later reference:
 ;;; https://en.wikipedia.org/wiki/INT_10H "Set text-mode cursor shape"
 
 	BITS 16
