@@ -12,6 +12,9 @@
 ;;; the shell is just another application (that gets executed at startup); move
 ;;; REPL section into a shell procedure and execute it at startup
 
+;;; TODO: could have a 'help <topic>' format. E.g. in calc 'help operator overflow'
+;;; would give a more detailed description of the error.
+
 ;;; TODO: check for correct usage of "operator" and "operand".
 
 ;;; TODO: make sure procedures preserve ax when they call other procedures
@@ -395,6 +398,8 @@ calc_eval:
 	.toofewstr db "Too few operands.",0
 	.toomanystr db "Too many operands.",0
 	.invalidoperatorstr db "Invalid operator.",0
+	.operandoverflowstr db "Operand overflow.",0
+	.operationoverflowstr db "Operation overflow.",0
 
 	.loop:
 
@@ -414,6 +419,7 @@ calc_eval:
 	;; Parse the integer and push its value. Note that parse_num also
 	;; returns (in cx) the number of digits in the integer.
 	call parse_num
+	jo .operand_overflow
 	push ax
 	add bx, 2  ; Stack offset increases by 2B.
 
@@ -454,6 +460,8 @@ calc_eval:
 
 	pop di  ; Restore input string pointer.
 	pop bx	; Restore stack offset.
+
+	jo .operation_overflow
 
 	;; Push the result.
 	push ax
@@ -506,6 +514,19 @@ calc_eval:
 	mov di, .invalidoperatorstr
 	call println
 	jmp .return
+
+	;; Operand overflow. Fix the stack and notify the user.
+	.operand_overflow:
+	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov di, .operandoverflowstr
+	call println
+	jmp .return
+
+	;; Operation overflow. Fix the stack and notify the user.
+	.operation_overflow:
+	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov di, .operationoverflowstr
+	call println
 
 	;; The stack offset is back to 0B, either because the expression
 	;; contained properly balanced operators and operands or because we
@@ -629,10 +650,14 @@ parse_num:
 	pop si  ; restore running total
 	pop di  ; restore string terminator
 
+	jo .return
+
 	;; Multiply the current digit by the place value and add the result to
 	;; our running total.
 	imul dx, ax
+	jo .return
 	add si, dx
+	jo .return
 
 	;; Increment the current place.
 	inc cx
@@ -647,6 +672,8 @@ parse_num:
 
 	;; The final value of our integer.
 	mov ax, si
+
+	.return:
 
 	;; restore
 	pop si
@@ -676,6 +703,7 @@ power:
 	je .return
 
 	imul ax, di  ; Multiply running total by first operand.
+	jo .return
 	dec si	     ; Decrement the exponent.
 	jmp .loop
 
