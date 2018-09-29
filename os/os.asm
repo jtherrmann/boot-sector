@@ -434,7 +434,7 @@ command_table:
 ;;; Calculator
 ;;; ---------------------------------------------------------------------------
 
-;;; TODO: method of exiting; welcome message w/ info about RPN/postfix
+;;; TODO: welcome message w/ info about RPN/postfix
 ;;; in welcome message include limitations (e.g. max/min values for a number)
 
 calculator:
@@ -471,8 +471,6 @@ calculator:
 	ret
 
 ;;; TODO: double check all sizes, and in helper funcs
-;;; TODO: detect & handle numbers out of bounds (e.g. there are conditional
-;;; overflow jump instructions; maybe in lecture notes?)
 calc_eval:
 ;;; Evaluate a calculator expression.
 ;;; Pre: di points to the input string.
@@ -769,9 +767,6 @@ getstr:
 	;; save
 	push ax
 	push bx
-
-	;; TODO: add support for backspace; and ideally support for C-h
-	;; (translate to backspace) and C-m (translate to carriage ret)
 
 	mov bx, 0	; index
 	.loop:
