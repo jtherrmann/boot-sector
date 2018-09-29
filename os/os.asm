@@ -393,6 +393,61 @@ invalid_command:
 	ret
 
 
+;;; ---------------------------------------------------------------------------
+;;; Shell data
+;;; ---------------------------------------------------------------------------
+
+	shell_prompt times 32 db 0
+
+	;; TODO: double-check that this value is correct
+	;; The help command prints the first help_list_len commands from the
+	;; command table. Commands located after this position are meant to be
+	;; discovered by the user. :)
+	help_list_len dw 6
+
+;;; Command strings:
+
+	calc_str db "cc",0	; TODO
+	hello_str db "hello",0
+	help_str db "help",0
+	keymap_str db "keymap",0
+	me_str db "me",0
+	reboot_str db "reboot",0
+
+	;; Commands not listed by help:
+
+	sos_str db "...---...",0
+
+command_table:
+	dw calc_str
+	dw calc
+
+	dw hello_str
+	dw hello
+
+	dw help_str
+	dw help
+
+	dw keymap_str
+	dw keymap
+
+	dw me_str
+	dw me
+
+	dw reboot_str
+	dw reboot
+
+	;; Commands not listed by help:
+
+	dw sos_str
+	dw help
+
+	;; Allows execute_command to always call invalid_command if the input
+	;; string does not match any of the above command strings.
+	dw input
+	dw invalid_command
+
+
 ;;; ===========================================================================
 ;;; Applications
 ;;; ===========================================================================
@@ -1196,7 +1251,6 @@ power:
 	;; TODO: better headings
 
 	input times 256 db 0
-	shell_prompt times 32 db 0
 	calc_prompt db "calc> ",0
 
 	dvorak db 1
@@ -1216,55 +1270,5 @@ operator_table:
 	dw div_op
 	dw mod_op
 	dw pow_op
-
-;;; Shell data:
-
-	;; TODO: double-check that this value is correct
-	;; The help command prints the first help_list_len commands from the
-	;; command table. Commands located after this position are meant to be
-	;; discovered by the user. :)
-	help_list_len dw 6
-
-;;; Command strings:
-
-	calc_str db "cc",0	; TODO
-	hello_str db "hello",0
-	help_str db "help",0
-	keymap_str db "keymap",0
-	me_str db "me",0
-	reboot_str db "reboot",0
-
-	;; Commands not listed by help:
-
-	sos_str db "...---...",0
-
-command_table:
-	dw calc_str
-	dw calc
-
-	dw hello_str
-	dw hello
-
-	dw help_str
-	dw help
-
-	dw keymap_str
-	dw keymap
-
-	dw me_str
-	dw me
-
-	dw reboot_str
-	dw reboot
-
-	;; Commands not listed by help:
-
-	dw sos_str
-	dw help
-
-	;; Allows execute_command to always call invalid_command if the input
-	;; string does not match any of the above command strings.
-	dw input
-	dw invalid_command
 
 os_end:	
