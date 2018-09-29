@@ -165,6 +165,11 @@ repl:
 
 	mov di, input
 	call getstr
+
+	;; Check for empty input.
+	cmp BYTE [di], 0
+	je repl
+
 	call execute_command
 	jmp repl
 
@@ -373,6 +378,10 @@ calculator:
 
 	mov di, input
 	call getstr
+
+	;; Check for empty input.
+	cmp BYTE [di], 0
+	je .loop
 
 	mov si, .exit_str
 	call compare_strings
