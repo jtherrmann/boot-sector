@@ -44,6 +44,9 @@
 ;;; TODO: save this for later reference:
 ;;; https://en.wikipedia.org/wiki/INT_10H "Set text-mode cursor shape"
 
+	%define break 0x0d, 0x0a
+	%define line(str) db str,break
+
 	BITS 16
 
 	;; TODO: apply Michael Petch's boot loader tips:
@@ -385,7 +388,7 @@ invalid_command:
 
 ;;; Command strings:
 
-	calc_str db "cc",0	; TODO
+	calc_str db "calc",0
 	hello_str db "hello",0
 	help_str db "help",0
 	keymap_str db "keymap",0
@@ -441,9 +444,20 @@ calculator:
 ;;; Calculator.
 	push di  ; save
 
-	jmp .loop
+	jmp .start
+
+	.welcome_str:
+	line("Welcome to the Somewhat Lazy Calculator (SLC)!")
+	line("Run 'help' for help.")
+	db 0
 
 	.exit_str db "exit",0
+	.help_str db "help",0
+
+	.start:
+
+	mov di, .welcome_str
+	call println
 
 	.loop:
 
@@ -462,10 +476,93 @@ calculator:
 	cmp ax, 0
 	jne .return
 
+	mov si, .help_str
+	call compare_strings
+	cmp ax, 0
+	jne .help
+
 	call calc_eval
 	jmp .loop
 
+	.help:
+	call calc_help
+	jmp .loop
+
 	.return:
+
+	pop di  ; restore
+	ret
+
+calc_help:
+;;; Display the calculator help message.
+	push di  ; save
+	jmp .start
+
+	.help_str:
+
+	line("Most calculators use infix notation; that is, operators fall in")
+	line("between their operands (e.g. 3 - 1 = 2).")
+	db break
+
+	line("SLC uses postfix notation; that is, operators follow their")
+	line("operands (e.g. 3 1 - = 2).")
+	db break
+
+	line("Postfix notation is useful in computing because expressions")
+	line("written in postfix notation are extremely simple to evaluate")
+	line("using a stack. While you might consider infix notation more")
+	line("readable, SLC is Somewhat Lazy and prefers postfix notation.")
+	db break
+
+	line("SLC recognizes the following operators:")
+	db break
+
+	line("+ (add)")
+	line("- (subtract)")
+	line("* (multiply)")
+	line("/ (divide)")
+	line("% (mod)")
+	line("^ (power)")
+	db break
+
+	line("SLC can only operate on integers in the range -32768 to 32767")
+	line("(inclusive).")
+	db break
+
+	line(`An "operand overflow" occurs when SLC encounters an operand`)
+	line("outside of this range:")
+	db break
+
+	line("SLC> 32768")
+	line("Operand overflow.")
+	db break
+
+	line(`An "operation overflow" occurs when SLC encounters an operation`)
+	line("whose result falls outside of this range:")
+	db break
+
+	line("SLC> 32767 1 +")
+	line("Operation overflow.")
+	db break
+
+	line("Oh, and SLC is too lazy to parse negative operands (e.g. -10).")
+	line("But there's a simple solution:")
+	db break
+
+	line("SLC> 0 10 -")
+	line("-10")
+	line("SLC> 0 10 - 2 ^")
+	line("100")
+	line("SLC> 0 10 - 3 ^")
+	line("-1000")
+	db break
+
+	line("That's it--thanks for using SLC!")
+	db 0
+
+	.start:
+	mov di, .help_str
+	call println
 
 	pop di  ; restore
 	ret
@@ -735,7 +832,7 @@ pow_op:
 ;;; Calculator data
 ;;; ---------------------------------------------------------------------------
 
-	calc_prompt db "calc> ",0
+	calc_prompt db "SLC> ",0
 
 	operator_chars db "+-*/%^",0
 operator_table:	
