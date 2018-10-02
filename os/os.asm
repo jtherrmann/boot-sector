@@ -558,9 +558,9 @@ calc_eval:
 
 	jmp .test
 
-	.toofewstr db "Too few operands.",0
+	.toofewstr db "Too few operands for operator ' '.",0
 	.toomanystr db "Too many operands.",0
-	.invalidoperatorstr db "Invalid operator.",0
+	.invalidoperatorstr db "Invalid operator ' '.",0
 	.operandoverflowstr db "Operand overflow.",0
 	.operationoverflowstr db "Operation overflow.",0
 
@@ -658,7 +658,9 @@ calc_eval:
 	;; notify the user.
 	.toofew:
 	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov BYTE dl, [di]  ; operator char
 	mov di, .toofewstr
+	mov BYTE [di+31], dl  ; Include the operator in the error message.
 	call println
 	jmp .return
 
@@ -674,7 +676,9 @@ calc_eval:
 	;; user.
 	.invalid_operator:
 	add sp, bx  ; Add the stack offset to the stack pointer.
+	mov BYTE dl, [di]  ; operator char
 	mov di, .invalidoperatorstr
+	mov BYTE [di+18], dl  ; Include the operator in the error message.
 	call println
 	jmp .return
 
