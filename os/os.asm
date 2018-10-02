@@ -143,6 +143,18 @@ os_start:
 
 shell:	
 ;;; TODO
+	jmp .start
+
+	.welcome_str:
+	line("Welcome!")
+	line("Run 'help' for a list of commands.")
+	db 0
+
+	.start:
+
+	mov di, .welcome_str
+	call println
+
 	mov di, shell_prompt
 	mov BYTE [di+0], '>'
 	mov BYTE [di+1], ' '
