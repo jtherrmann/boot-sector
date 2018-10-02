@@ -9,7 +9,13 @@ TODO: table of contents
 
 ### Getting started
 
-TODO
+Known to work on Debian GNU/Linux 9.5 (stretch).
+
+1. Make sure `nasm` and `qemu` are installed.
+2. Clone this repo, `cd` into `os/`, and run:
+
+        nasm -f bin -o os.bin os.asm
+        qemu-system-x86_64 os.bin
 
 ### Applications
 

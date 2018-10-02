@@ -6,9 +6,6 @@
 
 ;;; TODO: format docstrings like Args and Returns rather than pre/post
 
-;;; TODO: could have a 'help <topic>' format. E.g. in calc 'help operator overflow'
-;;; would give a more detailed description of the error.
-
 ;;; TODO: go back to uses of 'jo ...' and don't use it where unnecessary (like
 ;;; could the overflow flag ever be set by an idiv? at least how I use it?)
 
@@ -30,16 +27,6 @@
 ;;; the end of the line
 
 ;;; TODO: ensure that str labels are always local (begin with .) in procedures
-	
-;;; TODO: clean up
-;;; https://www.cs.uaf.edu/2011/fall/cs301/lecture/11_18_bootblock.html
-;;; compile:
-;;; nasm -f bin -o boot.bin boot.asm
-
-;;; TODO: clean up
-;;; https://opensourceforu.com/2017/06/hack-bootsector-write/
-;;; test:
-;;; qemu-system-x86_64 boot.bin
 
 ;;; TODO: save this for later reference:
 ;;; https://en.wikipedia.org/wiki/INT_10H "Set text-mode cursor shape"
@@ -526,6 +513,9 @@ calc_help:
 	db break
 
 	line("Exit with 'exit'.")
+	db break
+
+	line("Please see the README for more information.")
 	db 0
 
 	.start:
