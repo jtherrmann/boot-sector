@@ -1,13 +1,15 @@
-# CS 301
+# Operating system for x86 real mode
 
 Jake Herrmann  
 CS 301 Fall 2018
 
 TODO: table of contents
 
-## Project 1: Operating system for x86 real mode
+## Introduction
 
-### Getting started
+TODO
+
+## Getting started
 
 Known to work on Debian GNU/Linux 9.5 (stretch).
 
@@ -17,11 +19,9 @@ Known to work on Debian GNU/Linux 9.5 (stretch).
         nasm -f bin -o os.bin os.asm
         qemu-system-x86_64 os.bin
 
-### Applications
+## Applications
 
-#### The Somewhat Lazy Calculator (SLC)
-
-##### Postfix notation
+### The Somewhat Lazy Calculator (SLC)
 
 Most calculators use infix notation; that is, operators fall in between their
 operands (e.g. 3 - 1 = 2).
@@ -37,8 +37,6 @@ Postfix notation is useful in computing because expressions written in postfix
 notation are extremely simple to evaluate using a stack. While you might
 consider infix notation more readable, SLC is lazy and prefers postfix
 notation.
-
-##### Operators and operands
 
 SLC recognizes the following operators:
 
