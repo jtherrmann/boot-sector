@@ -1305,6 +1305,6 @@ power:
 ;;; ===========================================================================
 
 	input_buffer times 256 db 0
-	dvorak_mode db 1
+	dvorak_mode db 0
 
 os_end:	
