@@ -493,10 +493,6 @@ calculator:
 	pop di  ; restore
 	ret
 
-;;; TODO: indent interpreter examples 4 spaces
-;;; TODO: allow cursor to scroll to bottom of screen
-;;; TODO: if necessary, put help text in readme w/ a todo to get it to display
-;;; properly here
 calc_help:
 ;;; Display the calculator help message.
 	push di  ; save
@@ -504,64 +500,20 @@ calc_help:
 
 	.help_str:
 
-	line("Most calculators use infix notation; that is, operators fall in")
-	line("between their operands (e.g. 3 - 1 = 2).")
+	line("Operators: + - * / % ^")
+	line("Operands: integers in the range -32768 to 32767 (inclusive).")
 	db break
 
-	line("SLC uses postfix notation; that is, operators follow their")
-	line("operands (e.g. 3 1 - = 2).")
+	line("Expressions use postfix notation:")
 	db break
 
-	line("Postfix notation is useful in computing because expressions")
-	line("written in postfix notation are extremely simple to evaluate")
-	line("using a stack. While you might consider infix notation more")
-	line("readable, SLC is Somewhat Lazy and prefers postfix notation.")
+	line("  SLC> 6 2 /")
+	line("  3")
+	line("  SLC> 10 2 ^ 25 -")
+	line("  75")
 	db break
 
-	line("SLC recognizes the following operators:")
-	db break
-
-	line("+ (add)")
-	line("- (subtract)")
-	line("* (multiply)")
-	line("/ (divide)")
-	line("% (mod)")
-	line("^ (power)")
-	db break
-
-	line("SLC can only operate on integers in the range -32768 to 32767")
-	line("(inclusive).")
-	db break
-
-	line(`An "operand overflow" occurs when SLC encounters an operand`)
-	line("outside of this range:")
-	db break
-
-	line("SLC> 32768")
-	line("Operand overflow.")
-	db break
-
-	line(`An "operation overflow" occurs when SLC encounters an operation`)
-	line("whose result falls outside of this range:")
-	db break
-
-	line("SLC> 32767 1 +")
-	line("Operation overflow.")
-	db break
-
-	line("Oh, and SLC is too lazy to parse negative operands (e.g. -10).")
-	line("But there's a simple solution:")
-	db break
-
-	line("SLC> 0 10 -")
-	line("-10")
-	line("SLC> 0 10 - 2 ^")
-	line("100")
-	line("SLC> 0 10 - 3 ^")
-	line("-1000")
-	db break
-
-	line("That's it--thanks for using SLC!")
+	line("Exit with 'exit'.")
 	db 0
 
 	.start:
