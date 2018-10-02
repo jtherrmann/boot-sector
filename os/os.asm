@@ -493,6 +493,10 @@ calculator:
 	pop di  ; restore
 	ret
 
+;;; TODO: indent interpreter examples 4 spaces
+;;; TODO: allow cursor to scroll to bottom of screen
+;;; TODO: if necessary, put help text in readme w/ a todo to get it to display
+;;; properly here
 calc_help:
 ;;; Display the calculator help message.
 	push di  ; save
