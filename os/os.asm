@@ -1,48 +1,8 @@
-;;; TODO: incorporate changes from comments and answers:
-;;; https://stackoverflow.com/q/52463695/10402025
-
-;;; TODO: clean up, document; search for TODO, FIXME in file; also search for other
-;;; stuff to be addressed/cleaned up that's not marked with TODO or FIXME
-
-;;; TODO: format docstrings like Args and Returns rather than pre/post
-
-;;; TODO: go back to uses of 'jo ...' and don't use it where unnecessary (like
-;;; could the overflow flag ever be set by an idiv? at least how I use it?)
-
-;;; TODO: check for correct usage of "operator" and "operand".
-
-;;; TODO: make sure procedures preserve ax when they call other procedures
-;;; that return in ax
-
-;;; TODO: use movzx for zero extension wherever there's a move from smaller reg into larger reg
-;;; use movsx for sign extension, if needed
-;;; https://stackoverflow.com/a/32836665/10402025
-
-;;; TODO: convert all mov <reg>, 0 to xor <reg>, <reg>? what's the difference?
-
-;;; TODO: comment all procedures thoroughly
-
-;;; TODO: view in another editor, esp. for tab formatting, esp. for trailing
-;;; ; comments, esp. those that are supposed to be 1 or 2 spaces away from
-;;; the end of the line
-
-;;; TODO: ensure that str labels are always local (begin with .) in procedures
-
-;;; TODO: save this for later reference:
-;;; https://en.wikipedia.org/wiki/INT_10H "Set text-mode cursor shape"
-
 	%define break 0x0d, 0x0a
 	%define line(str) db str,break
 
 	BITS 16
-
-	;; TODO: apply Michael Petch's boot loader tips:
-	;; https://stackoverflow.com/a/32705076/10402025
-	;; linked from: https://stackoverflow.com/a/34095896/10402025
-	;; also referenced from:
-	;; https://blog.benjojo.co.uk/post/interactive-x86-bootloader-tutorial
 	
-;;; TODO: remove this heading?
 ;;; ===========================================================================
 ;;; Boot loader
 ;;; ===========================================================================
@@ -58,7 +18,6 @@
 	;;   - https://stackoverflow.com/q/52461308/10402025
 	;;   - https://stackoverflow.com/q/52463695/10402025
 
-	;; TODO: comment section/vstart
 	section boot, vstart=0x0000
 
 	os_load_start equ 0x0060
@@ -110,7 +69,6 @@
 	db 0x55
 	db 0xaa
 
-	;; TODO: comment section/vstart
 	section os, vstart=0x0000
 os_start:	
 
@@ -129,7 +87,7 @@ os_start:
 ;;; ===========================================================================
 
 shell:	
-;;; TODO
+;;; Run the shell.
 	jmp .start
 
 	.welcome_str:
@@ -203,8 +161,6 @@ execute_command:
 ;;; ---------------------------------------------------------------------------
 ;;; Shell commands
 ;;; ---------------------------------------------------------------------------
-
-;;; TODO: prefix names w/ something like cmd_? (or _cmd suffix)
 
 calc:
 ;;; Start the calculator.
@@ -379,7 +335,6 @@ invalid_command:
 
 	shell_prompt times 32 db 0
 
-	;; TODO: double-check that this value is correct
 	;; The help command prints the first help_list_len commands from the
 	;; command table. Commands located after this position are meant to be
 	;; discovered by the user. :)
@@ -435,9 +390,6 @@ command_table:
 ;;; ---------------------------------------------------------------------------
 ;;; Calculator
 ;;; ---------------------------------------------------------------------------
-
-;;; TODO: welcome message w/ info about RPN/postfix
-;;; in welcome message include limitations (e.g. max/min values for a number)
 
 calculator:
 ;;; Calculator.
@@ -525,7 +477,6 @@ calc_help:
 	pop di  ; restore
 	ret
 
-;;; TODO: double check all sizes, and in helper funcs
 calc_eval:
 ;;; Evaluate a calculator expression.
 ;;; Pre: di points to the input string.
@@ -814,10 +765,6 @@ operator_table:
 ;;; Input
 ;;; ---------------------------------------------------------------------------
 
-;;; TODO: perhaps allow max input len to be a parameter; use it to prevent input buffer overflow
-;;; as well as limit max len of custom repl prompt
-;;; TODO: convert handling special chars to some sort of lookup table so adding
-;;; special chars is easy; add l/r arrow keys
 getstr:
 ;;; Read a string from keyboard input.
 ;;; Pre: di points to an array.
@@ -856,10 +803,6 @@ getstr:
 	.skipconvert:
 
 	;; add the char to the input array
-	;; TODO: document:
-	;; note: only certain regs can be used for indexing, di and bx both
-	;; work
-	;; also see: https://stackoverflow.com/a/12474190
 	mov BYTE [di+bx], al
 
 	;; print the char in al
