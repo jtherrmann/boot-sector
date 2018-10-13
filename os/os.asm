@@ -195,6 +195,7 @@ help:
 
 	.loop:
 
+	;; Print the current command string.
 	mov WORD di, [bx]
 	call println
 
@@ -243,7 +244,7 @@ keymap:
 	ret
 
 me:
-;;; Identify the user.
+;;; Identify the user by changing the shell prompt to their name.
 
 	;; save
 	push ax
@@ -260,6 +261,7 @@ me:
 	mov di, .str
 	call println
 
+	;; Get their name.
 	mov di, input_buffer
 	call getstr
 
@@ -267,6 +269,7 @@ me:
 	mov bx, 0
 	jmp .test
 
+	;; Copy their name from the input buffer to the shell prompt.
 	.loop:
 	mov BYTE al, [di+bx]
 	mov BYTE [si+bx], al
@@ -422,16 +425,19 @@ calculator:
 	cmp BYTE [di], 0
 	je .loop
 
+	;; Check for the exit command.
 	mov si, .exit_str
 	call compare_strings
 	cmp ax, 0
 	jne .return
 
+	;; Check for the help command.
 	mov si, .help_str
 	call compare_strings
 	cmp ax, 0
 	jne .help
 
+	;; Assume the input is an expression and evaluate it.
 	call calc_eval
 	jmp .loop
 
@@ -505,6 +511,9 @@ calc_eval:
 	.operandoverflowstr db "Operand overflow.",0
 	.operationoverflowstr db "Operation overflow.",0
 
+	;; Loop through the input string. Upon encountering an operand, push it
+	;; to the stack. Upon encountering an operator, pop two operands and
+	;; apply the operator to them, then push the result to the stack.
 	.loop:
 
 	;; Jump to the bottom of the loop if the current input char is a space.
@@ -549,6 +558,7 @@ calc_eval:
 	cmp ax, -1
 	je .invalid_operator
 
+	;; Pop two operands.
 	pop si  ; second operand
 	pop cx  ; first operand
 	sub bx, 4  ; Stack offset decreases by 4B.
@@ -580,7 +590,7 @@ calc_eval:
 	cmp BYTE [di], 0
 	jne .loop
 
-	;; Done reading the input string (exit the loop).
+	;; Done reading the input string.
 
 	;; Pop the final result.
 	pop ax
@@ -591,7 +601,8 @@ calc_eval:
 	cmp bx, 0
 	jg .toomany
 
-	;; The stack offset was 0B as expected, so print the final result.
+	;; The stack offset was 0B as expected, so print the final result and
+	;; return.
 	call println_num
 	jmp .return
 
@@ -774,27 +785,31 @@ getstr:
 	push ax
 	push bx
 
-	mov bx, 0	; index
+	mov bx, 0  ; input array index
+
+	;; Get one char at a time, adding each one to the input array and
+	;; printing it to the screen. Exit upon encountering a carriage return.
 	.loop:
 	
-	;; read a char to al
+	;; Read a char to al.
 	mov ah, 0
 	int 0x16
 
-	;; check for backspace
+	;; Check for backspace.
 	cmp al, 0x08
 	je .backspace
 
-	;; check for carriage ret (enter)
+	;; Check for carriage ret (enter).
 	cmp al, 0x0d
 	je .return
 
-	;; Skip the remaining unprintable chars.
+	;; Skip unprintable chars.
 	cmp al, 0x20
 	jl .loop
 	cmp al, 0x7e
 	jg .loop
 
+	;; Convert the char from QWERTY to Dvorak if Dvorak is enabled.
 	cmp BYTE [dvorak_mode], 0
 	je .skipconvert
 
@@ -802,15 +817,16 @@ getstr:
 
 	.skipconvert:
 
-	;; add the char to the input array
+	;; Add the char to the input array.
 	mov BYTE [di+bx], al
 
-	;; print the char in al
+	;; Print the char in al.
 	mov ah, 0x0e
 	int 0x10
 
 	jmp .increment
 
+	;; Handle a backspace.
 	.backspace:
 
 	cmp bx, 0
@@ -850,7 +866,7 @@ cursor_backspace:
 	;; - https://wiki.osdev.org/Text_Mode_Cursor#Get_Cursor_Data
 	;; - https://wiki.osdev.org/Text_Mode_Cursor#Moving_the_Cursor
 
-	;; from source: "display page (usually, if not always 0)"
+	;; From source: bh is the "display page (usually, if not always 0)".
 	xor bh, bh
 
 	;; Get cursor data. Row and column are returned in dh and dl. (Values
@@ -893,8 +909,7 @@ convert_char:
 	cmp al, 0x21
 	jl .return
 
-	;; Use movzx to zero-extend the high bits of bx.
-	;; https://stackoverflow.com/a/32836665/10402025
+	;; Use the QWERTY char as an index into the Dvorak keymap.
 	movzx bx, al
 	mov BYTE al, [dvorak_keymap+bx-0x21]
 
@@ -913,20 +928,22 @@ dvorak_keymap:
 
 println:
 ;;; Print a string on a new line.
-;;; Pre: di contains a pointer to the beginning of the string.
+;;; Pre: di points to the beginning of the string.
 	call print_newline
 	call print
 	ret
 
 print:
 ;;; Print a string.
-;;; Pre: di contains a pointer to the beginning of the string.
+;;; Pre: di points to the beginning of the string.
 
 	;; save
 	push ax
 	push bx
 	
 	mov ah, 0x0e
+
+	;; Print each char until encountering a null terminator.
 
 	mov bx, 0
 	jmp .test
@@ -1055,20 +1072,27 @@ print_newline:
 
 compare_strings:
 ;;; Compare two strings.
-;;; Pre: di and si contain pointers to the strings.
+;;; Pre: di and si point to the strings.
 ;;; Post: ax contains 1 if the strings are equal and 0 otherwise.
 	push bx  ; save
 
-	mov bx, 0
+	mov bx, 0  ; index into each string
+
+	;; Loop through the strings, comparing each pair of chars with the same
+	;; index.
 	.loop:
 
+	;; Exit the loop and return 0 if the current two chars are not equal.
 	mov BYTE al, [si+bx]
 	cmp BYTE [di+bx], al
 	jne .false
 
+	;; The chars are equal, so exit the loop and return true if we've
+	;; reached the null terminator.
 	cmp BYTE [di+bx], 0
 	je .true
 
+	;; Advance to the next two chars and continue the loop.
 	inc bx
 	jmp .loop
 
@@ -1131,6 +1155,7 @@ parse_num:
 	;; stop).
 	dec di
 
+	;; Start the loop.
 	jmp .test
 
 	.loop_add_digits:
