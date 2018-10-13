@@ -911,13 +911,13 @@ convert_char:
 
 	;; Use the QWERTY char as an index into the Dvorak keymap.
 	movzx bx, al
-	mov BYTE al, [dvorak_keymap+bx-0x21]
+	mov BYTE al, [.dvorak_keymap+bx-0x21]
 
 	.return:
 	pop bx  ; restore
 	ret
 
-dvorak_keymap:
+	.dvorak_keymap:
 	db "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL",0x22,"POYGK<QF:/"
 	db "\=^{`axje.uidchtnmbrl'poygk,qf;?|+~",0x7f
 
