@@ -2,6 +2,13 @@
 	%define line(str) db str,break
 
 	BITS 16
+
+	;; General sources used throughout project:
+	;; - 16-bit x86 addressing modes: https://stackoverflow.com/a/12474190
+	;; - zero-extension: https://stackoverflow.com/a/32836665
+	;; - Lecture notes:
+	;;   - https://www.cs.uaf.edu/2017/fall/cs301/lecture/09_11_registers.html
+	;;   - https://www.cs.uaf.edu/2017/fall/cs301/lecture/09_15_strings_arrays.html
 	
 ;;; ===========================================================================
 ;;; Boot loader
@@ -15,8 +22,8 @@
 	;; - https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH=02h:_Read_Sectors_From_Drive
 	;; - https://wiki.osdev.org/Real_Mode#The_Stack
 	;; - Michael Petch:
-	;;   - https://stackoverflow.com/q/52461308/10402025
-	;;   - https://stackoverflow.com/q/52463695/10402025
+	;;   - https://stackoverflow.com/q/52461308
+	;;   - https://stackoverflow.com/q/52463695
 
 	section boot, vstart=0x0000
 
@@ -43,7 +50,7 @@
 	;; 0x0000 so that we load the sectors into memory starting at
 	;; os_load_start:0x0000.
 	;; 
-	;; https://stackoverflow.com/a/32705076/10402025
+	;; https://stackoverflow.com/a/32705076
 	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
         mov bx, os_load_start 
         mov es, bx  
@@ -60,7 +67,7 @@
 	;; instructions at os_load_start:0x0000.
 	;; 
 	;; https://wiki.osdev.org/Segmentation#Far_Jump
-	;; https://stackoverflow.com/a/47249973/10402025
+	;; https://stackoverflow.com/a/47249973
 	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
         jmp os_load_start:0x0000
 
@@ -74,7 +81,7 @@ os_start:
 
 	;; Set DS (the Data Segment register) to os_load_start.
 	;; 
-	;; Michael Petch: https://stackoverflow.com/q/52461308/10402025
+	;; Michael Petch: https://stackoverflow.com/q/52461308
 	;; http://www.c-jump.com/CIS77/ASM/Memory/lecture.html#M77_0120_reg_names
 	mov ax, os_load_start
 	mov ds, ax
@@ -1010,7 +1017,7 @@ print_num:
 	
 	;; div divides dx:ax by the operand. ax stores the quotient and dx
 	;; stores the remainder.
-	;; source: https://stackoverflow.com/a/8022107/10402025
+	;; source: https://stackoverflow.com/a/8022107
 
 	;; Divide our number (ax) by 10.
 	xor dx, dx
@@ -1221,11 +1228,11 @@ divide:
 
 	;; div divides dx:ax by the operand. ax stores the quotient and dx
 	;; stores the remainder.
-	;; source: https://stackoverflow.com/a/8022107/10402025
+	;; source: https://stackoverflow.com/a/8022107
 
 	;; idiv divides signed numbers in a similar manner. cwd sign-extends ax
 	;; into dx:ax.
-	;; source: https://stackoverflow.com/a/9073207/10402025
+	;; source: https://stackoverflow.com/a/9073207
 
 	mov ax, di  ; first operand
 	cwd
