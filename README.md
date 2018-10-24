@@ -1,13 +1,29 @@
-# Operating system for x86 real mode
+# Boot sector and shell
 
 Jake Herrmann  
 CS 301 Fall 2018
 
-TODO: table of contents
-
 ## Introduction
 
-TODO
+This is a boot sector that loads a shell for x86 real mode. The project touches
+on most of the topics covered in class so far, particularly branching, function
+calls, stack manipulation, integer overflow, register and data sizes, pointers,
+and strings.
+
+The first major challenge was getting the boot sector to load more sectors from
+the disk. Fortunately I received help from a kind Stack Overflow user (Michael
+Petch). Of course, the boot sector may still contain bugs that I haven't yet
+discovered.
+
+After working out the kinks in the boot sector, another significant challenge
+was the inability to easily print values at arbitrary points in the program, as
+that is my go-to debugging tool in higher level languages. In particular,
+mixing up register and data sizes caused me significant frustration until I
+learned to pay much closer attention to the sizes of values.
+
+Overall, the experience has given me more confidence working with lower level
+abstractions and was a valuable experience in code organization and debugging
+in general.
 
 ## Getting started
 
@@ -34,7 +50,7 @@ SLC uses postfix notation; that is, operators follow their operands:
     75
 
 Postfix notation is useful in computing because expressions written in postfix
-notation are extremely simple to evaluate using a stack. While you might
+notation are extremely simple to evaluate using a stack. While users might
 consider infix notation more readable, SLC is lazy and prefers postfix
 notation.
 
