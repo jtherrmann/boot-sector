@@ -1,7 +1,8 @@
 # Boot sector and shell
 
 Jake Herrmann  
-CS 301 Fall 2018
+CS 301 Fall 2018  
+Project 1
 
 ## Introduction
 
