@@ -1,4 +1,4 @@
-# Boot sector and shell
+# Boot sector and 16-bit shell
 
 Jake Herrmann\
 CS 301: Assembly Language Programming\
