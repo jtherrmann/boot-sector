@@ -398,17 +398,17 @@ command_table:
 ;;; ===========================================================================
 
 ;;; ---------------------------------------------------------------------------
-;;; Somewhat Lazy Calculator (SLC)
+;;; Calculator
 ;;; ---------------------------------------------------------------------------
 
 calculator:
-;;; Run SLC.
+;;; Run the calculator.
 	push di  ; save
 
 	jmp .start
 
 	.welcome_str:
-	line("Welcome to the Somewhat Lazy Calculator (SLC)!")
+	line("Welcome to the calculator!")
 	line("Run 'help' for help.")
 	db 0
 
@@ -471,9 +471,9 @@ calc_help:
 	line("Expressions use postfix notation:")
 	db break
 
-	line("  SLC> 6 2 /")
+	line("  calc> 6 2 /")
 	line("  3")
-	line("  SLC> 10 2 ^ 25 -")
+	line("  calc> 10 2 ^ 25 -")
 	line("  75")
 	db break
 
@@ -763,7 +763,7 @@ pow_op:
 ;;; Calculator data
 ;;; ---------------------------------------------------------------------------
 
-	calc_prompt db "SLC> ",0
+	calc_prompt db "calc> ",0
 
 	operator_chars db "+-*/%^",0
 operator_table:	

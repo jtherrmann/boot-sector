@@ -1,4 +1,4 @@
-# Boot sector and 16-bit shell
+# Boot sector
 
 Jake Herrmann\
 CS 301: Assembly Language Programming\
@@ -7,10 +7,10 @@ Project 1
 
 ## Introduction
 
-This is a boot sector that loads a shell for x86 real mode. The project touches
-on most of the topics covered in class so far, particularly branching, function
-calls, stack manipulation, integer overflow, register and data sizes, pointers,
-and strings.
+This is a boot sector that loads a simple shell for x86 real mode. The project
+touches on most of the topics covered in class so far, particularly branching,
+function calls, stack manipulation, integer overflow, register and data sizes,
+pointers, and strings.
 
 The first major challenge was getting the boot sector to load more sectors from
 the disk. Fortunately I received help from a kind Stack Overflow user (Michael
@@ -37,26 +37,30 @@ Known to work on Debian GNU/Linux 9.5 (stretch).
         nasm -f bin -o os.bin os.asm
         qemu-system-x86_64 os.bin
 
-## Applications
+## Commands
 
-### The Somewhat Lazy Calculator (SLC)
+Run `help` for a list of commands:
 
-Most calculators use infix notation; that is, operators fall in between their
-operands (e.g. 3 - 1 = 2).
+- `calc`: Run the calculator
+- `hello`: Say hello to the computer
+- `help`: Print a list of commands
+- `keymap`: Switch between QWERTY and Dvorak
+- `me`: Change your command prompt
+- `reboot`: Reboot the computer
 
-SLC uses postfix notation; that is, operators follow their operands:
+## Calculator
 
-    SLC> 6 2 /
+The calculator uses postfix notation:
+
+    calc> 6 2 /
     3
-    SLC> 10 2 ^ 25 -
+    calc> 10 2 ^ 25 -
     75
 
 Postfix notation is useful in computing because expressions written in postfix
-notation are extremely simple to evaluate using a stack. While users might
-consider infix notation more readable, SLC is lazy and prefers postfix
-notation.
+notation are extremely simple to evaluate using a stack.
 
-SLC recognizes the following operators:
+The calculator recognizes the following operators:
 
 `+` (add)  
 `-` (subtract)  
@@ -65,26 +69,27 @@ SLC recognizes the following operators:
 `%` (mod)  
 `^` (power)  
 
-SLC can only operate on integers in the range -32768 to 32767 (inclusive).
+The calculator can only operate on integers in the range -32768 to 32767
+(inclusive).
 
-An *operand overflow* occurs when SLC encounters an operand outside of this
-range:
+An *operand overflow* occurs when the calculator encounters an operand outside
+of this range:
 
-    SLC> 32768
+    calc> 32768
     Operand overflow.
 
-An *operation overflow* occurs when SLC encounters an operation whose result
-falls outside of this range:
+An *operation overflow* occurs when the calculator encounters an operation
+whose result falls outside of this range:
 
-    SLC> 32767 1 +
+    calc> 32767 1 +
     Operation overflow.
 
-Oh, and SLC is too lazy to parse negative operands (e.g. -10). But there's a
-simple workaround:
+Oh, and the calculator does not parse negative operands (e.g. -10). But there's
+a simple workaround:
 
-    SLC> 0 10 -
+    calc> 0 10 -
     -10
-    SLC> 0 10 - 2 ^
+    calc> 0 10 - 2 ^
     100
-    SLC> 0 10 - 3 ^
+    calc> 0 10 - 3 ^
     -1000
