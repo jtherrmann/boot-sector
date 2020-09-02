@@ -11,10 +11,10 @@
 	;;   - https://www.cs.uaf.edu/2017/fall/cs301/lecture/09_15_strings_arrays.html
 	
 ;;; ===========================================================================
-;;; Boot loader
+;;; Boot sector
 ;;; ===========================================================================
 
-	;; Special thanks to Michael Petch for his help with the boot loader!
+	;; Special thanks to Michael Petch for his help with the boot sector!
 	;; https://stackoverflow.com/users/3857942/michael-petch
 
 	;; General sources:
